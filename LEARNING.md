@@ -192,6 +192,28 @@ Still Looking. Newest entries at the bottom of each day.
 - **Mistake I made:** said the quota resets at "7 AM Vietnam time". The computer's clock is on
   US Eastern time, so it's 8 PM EDT. Lesson: check the clock, don't assume.
 
+### Added a clear "out of free quota" message
+- When the free daily allowance runs out, both AI features now say so in plain words, with the reset
+  time, instead of a vague error. Tested it for real while the quota was used up.
+- This matters once the app is public: judges share the same 10,000 neurons/day, so I must not
+  run the eval on the day they test it.
+
+---
+
+## Day 2 · Sat Sep 26, 2026
+
+### Problem: Cloudflare's quota didn't come back at the "reset" time
+- The dashboard said usage reset at 00:00 UTC, but at 09:00 UTC the API still answered
+  "you have used up your daily free allocation" (error 4006).
+- I checked our server log first: nothing of ours had called Cloudflare since the reset.
+- Then I searched: many people report the same thing on Cloudflare's community forum (dashboard
+  shows 0/10k, API still says 4006). So it's their side, not our code.
+- **My guess (not confirmed):** the limit really works as a rolling 24 hours, not a calendar day.
+- **What I did:** instead of refreshing by hand, a small script tries a tiny request every
+  15 minutes (almost zero cost) and starts the eval automatically once Cloudflare allows it.
+- **Lesson:** a free tier's "resets at midnight" isn't a promise. Plan the demo and judging day so
+  they don't depend on a fresh quota, and have a friendly message ready when it's out.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
