@@ -14,6 +14,11 @@
   --warning-soft: #fbf3e4;
   --warning: #7a5a1e;
   --danger: #9b3b30;
+  /* chart series: validated colour-blind-safe categorical slots 1-3 (dataviz reference palette) */
+  --series-aged: #2a78d6;
+  --series-baseline: #eb6834;
+  --series-strangers: #1baf7a;
+  --grid: #e4e2dd;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -29,6 +34,10 @@
     --warning-soft: #2e2719;
     --warning: #e2c48a;
     --danger: #e59a90;
+    --series-aged: #3987e5;
+    --series-baseline: #d95926;
+    --series-strangers: #199e70;
+    --grid: #2f383d;
   }
 }
 

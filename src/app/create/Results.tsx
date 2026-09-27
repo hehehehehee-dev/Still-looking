@@ -51,14 +51,16 @@ export default function Results({ data, onStartOver }: { data: ResultData; onSta
 
       <section className="rounded-xl border border-border bg-surface p-5">
         <h2 className="text-lg font-semibold">How confident is this?</h2>
-        <p className="mt-2 text-sm leading-relaxed">{confidenceNote(data.gapYears, data.familyCount)}</p>
+        <div className="mt-2 space-y-2 text-sm leading-relaxed">
+          {confidenceNote(data.gapYears, data.familyCount, data.featureCount).map((note) => <p key={note}>{note}</p>)}
+        </div>
         <a href="/accuracy" className="mt-2 inline-block text-sm text-accent underline">See how we measured accuracy</a>
       </section>
 
       <section className="rounded-xl border border-border bg-surface p-5">
         <h2 className="text-lg font-semibold">How to use these images</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed">
-          <li>Share them with the police officer or case manager handling the case, together with the original photo.</li>
+          <li><strong>Always share the original photo too.</strong> Give both to the police officer or case manager handling the case.</li>
           <li>In the US, contact NCMEC (1-800-THE-LOST). Their forensic artists can create a professional age progression.</li>
           <li>Treat all three as possibilities, not a single answer. Hair, weight and style can change a lot.</li>
           <li>Please don&apos;t post them publicly as &ldquo;what this child looks like now&rdquo;: an estimate can mislead people.</li>

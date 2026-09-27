@@ -1,8 +1,20 @@
 // The confidence note shown with results. It is NOT a per-image score (the model gives none).
-// It reports how the pipeline did in our offline test (see /eval) for a similar age gap.
-// TODO(Day 3): replace the placeholder numbers with the real eval results.
+// It reports how the same pipeline did in our offline test (see /eval and the Accuracy page)
+// for a similar age gap. Numbers come straight from the eval's summary file.
+
+import summary from "@/data/eval-summary.json";
 
 export type GapBucket = "under5" | "5to10" | "over10";
+
+type BucketStats = {
+  label: string;
+  pairs: number;
+  aged_top1_pct: number;
+  baseline_top1_pct: number;
+  aged_closer_than_strangers_pct: number;
+};
+const buckets = summary.buckets as unknown as Partial<Record<GapBucket, BucketStats>>;
+const totalPeople = summary.pairs_scored;
 
 export function bucketFor(gapYears: number): GapBucket {
   if (gapYears < 5) return "under5";
@@ -10,25 +22,26 @@ export function bucketFor(gapYears: number): GapBucket {
   return "over10";
 }
 
-type BucketResult = { label: string; pairs: number; beatBaselinePct: number | null };
-
-export const EVAL_RESULTS: Record<GapBucket, BucketResult> = {
-  under5: { label: "less than 5 years", pairs: 0, beatBaselinePct: null },
-  "5to10": { label: "5 to 10 years", pairs: 0, beatBaselinePct: null },
-  over10: { label: "more than 10 years", pairs: 0, beatBaselinePct: null },
-};
-
-export function confidenceNote(gapYears: number, familyCount: number): string {
-  const r = EVAL_RESULTS[bucketFor(gapYears)];
-  const measured =
-    r.beatBaselinePct === null
-      ? `We are still measuring accuracy for age gaps of ${r.label}.`
-      : `In our test on ${r.pairs} real people with an age gap of ${r.label}, the aged image was closer to the ` +
-        `person's real later photo than the original photo was in ${r.beatBaselinePct}% of cases.`;
-  const family =
-    familyCount > 0
-      ? " Family photos were used as a guide, but we have not been able to measure whether they improve accuracy."
-      : "";
-  const gap = gapYears > 10 ? " Longer gaps are harder: treat these images as a rough guide only." : "";
-  return measured + family + gap;
+export function confidenceNote(gapYears: number, familyCount: number, featureCount = 0): string[] {
+  const b = buckets[bucketFor(gapYears)];
+  const notes: string[] = [];
+  if (b) {
+    notes.push(
+      `In our test on ${b.pairs} real people with an age gap of ${b.label.toLowerCase()}, a face-recognition model ` +
+        `picked out the right person (among ${totalPeople}) from the aged image ${b.aged_top1_pct}% of the time, ` +
+        `and from the original childhood photo ${b.baseline_top1_pct}% of the time.`,
+      "So these images can help you picture how a child may have grown, but they are not a better match than " +
+        "the original photo. Always share the original photo as well.",
+    );
+  } else {
+    notes.push("We have not yet measured accuracy for this age gap.");
+  }
+  if (gapYears > 10) notes.push("Longer gaps are much harder: treat these images as a rough guide only.");
+  if (familyCount > 0) {
+    notes.push("Family photos were used as a guide, but we have not been able to measure whether they improve accuracy.");
+  }
+  if (featureCount > 0) {
+    notes.push("The model was asked to keep the distinguishing features you confirmed; check that they appear as you expect.");
+  }
+  return notes;
 }

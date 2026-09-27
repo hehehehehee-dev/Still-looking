@@ -10,9 +10,9 @@ export default function Home() {
         <p className="max-w-2xl text-lg leading-relaxed text-muted">
           When a child has been missing for a long time, the only photo a family has may show a face that no
           longer exists. Forensic artists age those photos using pictures of the child&apos;s parents and
-          siblings, but families often wait a long time for one. Still Looking creates an honest, early
-          estimate the same way: from the child&apos;s photo, guided by their family, with clear limits on
-          what it can and can&apos;t tell you.
+          siblings, but families often wait a long time for one. Still Looking, inspired by that method, gives
+          families an early way to picture how their child may have grown: from the child&apos;s photo, guided by
+          their family if they wish, with measured and clearly stated limits.
         </p>
         <Link href="/create"
           className="inline-block rounded-lg bg-accent px-6 py-3 font-medium text-accent-contrast">
