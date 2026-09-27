@@ -8,9 +8,10 @@
 import { useEffect, useState } from "react";
 import { planAges, type AgePlan } from "@/lib/age";
 import { MAX_FEATURES, MAX_INPUT_IMAGES } from "@/lib/limits";
-import { shrinkPhoto } from "@/lib/resize";
+import { shrinkPhoto, type CropArea } from "@/lib/resize";
 import type { Sex } from "@/lib/prompt";
 import Results, { type ResultData } from "./Results";
+import FaceCropper from "./FaceCropper";
 
 type FamilyEntry = { id: number; file: File | null; relation: string; age: string };
 
@@ -38,8 +39,10 @@ export default function CreateFlow() {
 
   // Preview of the child photo: a temporary in-browser link to the file on this device
   const [childPreview, setChildPreview] = useState("");
+  const [childCrop, setChildCrop] = useState<CropArea | null>(null); // the face area the family framed
   function chooseChildPhoto(file: File | null) {
     setChildFile(file);
+    setChildCrop(null);
     setChildPreview(file ? URL.createObjectURL(file) : "");
   }
   // Release the old link when the photo changes or the page closes
@@ -61,7 +64,7 @@ export default function CreateFlow() {
     setSuggestNote("");
     try {
       const form = new FormData();
-      form.append("childPhoto", await shrinkPhoto(childFile), "child.jpg");
+      form.append("childPhoto", await shrinkPhoto(childFile, childCrop ?? undefined), "child.jpg");
       const res = await fetch("/api/features", { method: "POST", body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok || !Array.isArray(data?.features)) throw new Error(data?.error ?? "Could not suggest features.");
@@ -90,7 +93,8 @@ export default function CreateFlow() {
     setStatus("loading");
     try {
       const form = new FormData();
-      form.append("childPhoto", await shrinkPhoto(childFile), "child.jpg");
+      const childBlob = await shrinkPhoto(childFile, childCrop ?? undefined);
+      form.append("childPhoto", childBlob, "child.jpg");
       form.append("dateOfBirth", dateOfBirth);
       form.append("photoDate", photoDate);
       form.append("sex", sex);
@@ -107,7 +111,8 @@ export default function CreateFlow() {
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.images) throw new Error(data?.error ?? "Something went wrong. Please try again.");
 
-      setResult({ ...data, originalUrl: childPreview });
+      // show the framed photo the model actually received next to the results
+      setResult({ ...data, originalUrl: URL.createObjectURL(childBlob) });
       setStatus("done");
       window.scrollTo({ top: 0 });
     } catch (err) {
@@ -117,6 +122,7 @@ export default function CreateFlow() {
   }
 
   function startOver() {
+    if (result) URL.revokeObjectURL(result.originalUrl);
     setResult(null);
     setStatus("form");
     window.scrollTo({ top: 0 });
@@ -137,21 +143,21 @@ export default function CreateFlow() {
       <section className="space-y-4 rounded-xl border border-border bg-surface p-5">
         <h2 className="text-xl font-semibold">1. The child</h2>
 
-        <div className="grid gap-5 sm:grid-cols-[160px_1fr]">
-          <label className="flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-background text-center text-sm text-muted hover:border-accent">
-            {childPreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={childPreview} alt="Selected photo of the child" className="h-full w-full object-cover" />
-            ) : (
-              <span className="px-3">Choose a clear, front-facing photo</span>
-            )}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              onChange={(e) => chooseChildPhoto(e.target.files?.[0] ?? null)}
-            />
-          </label>
+        <div className="grid gap-5 sm:grid-cols-[260px_1fr]">
+          <div className="space-y-2">
+            {childPreview && <FaceCropper imageUrl={childPreview} onChange={setChildCrop} />}
+            <label className={childPreview
+              ? "inline-block cursor-pointer text-sm text-accent underline"
+              : "flex aspect-square cursor-pointer items-center justify-center rounded-lg border border-dashed border-border bg-background text-center text-sm text-muted hover:border-accent"}>
+              {childPreview ? "Choose a different photo" : <span className="px-3">Choose a clear, front-facing photo</span>}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={(e) => chooseChildPhoto(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
 
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">

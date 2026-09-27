@@ -5,16 +5,25 @@
 
 import { MAX_INPUT_SIDE } from "./limits";
 
-export async function shrinkPhoto(file: File): Promise<Blob> {
+/** A rectangle in the original photo's pixels (what the cropper reports). */
+export type CropArea = { x: number; y: number; width: number; height: number };
+
+/**
+ * Optionally cuts out `crop` (e.g. just the child's face), then scales it to fit inside
+ * 500x500. Cropping first means the face fills the small image the model receives,
+ * instead of being a few hundred pixels inside a wide family photo.
+ */
+export async function shrinkPhoto(file: File, crop?: CropArea): Promise<Blob> {
   const bitmap = await createImageBitmap(file); // respects phone photo rotation (EXIF)
-  const scale = Math.min(1, MAX_INPUT_SIDE / Math.max(bitmap.width, bitmap.height));
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
+  const src = crop ?? { x: 0, y: 0, width: bitmap.width, height: bitmap.height };
+  const scale = Math.min(1, MAX_INPUT_SIDE / Math.max(src.width, src.height));
+  const width = Math.max(1, Math.round(src.width * scale));
+  const height = Math.max(1, Math.round(src.height * scale));
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, width, height);
+  canvas.getContext("2d")!.drawImage(bitmap, src.x, src.y, src.width, src.height, 0, 0, width, height);
   bitmap.close();
 
   return new Promise((resolve, reject) =>
