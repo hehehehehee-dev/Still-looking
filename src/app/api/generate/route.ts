@@ -5,7 +5,7 @@
 
 import { planAges } from "@/lib/age";
 import { buildPrompt, type FamilyRef, type Sex } from "@/lib/prompt";
-import { generateImage } from "@/lib/cloudflare";
+import { DAILY_LIMIT_MESSAGE, DailyLimitError, generateImage } from "@/lib/cloudflare";
 import { MAX_INPUT_IMAGES } from "@/lib/limits";
 import { cleanFeatures } from "@/lib/features";
 
@@ -71,6 +71,9 @@ export async function POST(request: Request) {
   const generated = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
   if (generated.length === 0) {
     const first = results.find((r) => r.status === "rejected");
+    if (first?.status === "rejected" && first.reason instanceof DailyLimitError) {
+      return bad(DAILY_LIMIT_MESSAGE, 429);
+    }
     console.error("All generations failed:", first?.status === "rejected" ? first.reason?.message : "");
     return bad("The image model could not create a result right now. Please try again in a minute.", 502);
   }

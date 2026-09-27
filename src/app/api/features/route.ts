@@ -2,6 +2,7 @@
 // Suggests distinguishing features from the child's photo for the family to check.
 // Same privacy rules as /api/generate: the photo lives only in this request's memory.
 
+import { DAILY_LIMIT_MESSAGE, DailyLimitError } from "@/lib/cloudflare";
 import { suggestFeatures } from "@/lib/features";
 
 export const maxDuration = 30;
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
   try {
     return Response.json({ features: await suggestFeatures(photo) });
   } catch (err) {
+    if (err instanceof DailyLimitError) return Response.json({ error: DAILY_LIMIT_MESSAGE }, { status: 429 });
     console.error("Feature suggestion failed:", err instanceof Error ? err.message : err);
     return Response.json({ error: "Could not suggest features right now. You can still type them yourself." }, { status: 502 });
   }

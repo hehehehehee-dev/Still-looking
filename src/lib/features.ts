@@ -9,6 +9,7 @@
 
 // ".ts" extension so the eval scripts can also run this file directly with Node
 import { MAX_FEATURE_LENGTH, MAX_FEATURES } from "./limits.ts";
+import { DailyLimitError, isDailyLimit } from "./cloudflare.ts";
 
 const VISION_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 
@@ -46,7 +47,9 @@ export async function suggestFeatures(photo: Blob): Promise<string[]> {
   const body = await res.json().catch(() => null);
   const text: unknown = body?.result?.choices?.[0]?.message?.content ?? body?.result?.response;
   if (!res.ok || typeof text !== "string") {
-    throw new Error(`Vision model error: ${body?.errors?.[0]?.message ?? `HTTP ${res.status}`}`);
+    const reason: string = body?.errors?.[0]?.message ?? `HTTP ${res.status}`;
+    if (isDailyLimit(reason)) throw new DailyLimitError(reason);
+    throw new Error(`Vision model error: ${reason}`);
   }
   return parseFeatures(text);
 }

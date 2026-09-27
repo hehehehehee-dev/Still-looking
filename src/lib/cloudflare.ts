@@ -3,6 +3,16 @@
 
 const MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 
+/** Cloudflare's free plan allows 10,000 "neurons" of AI use per day, reset at 00:00 UTC. */
+export class DailyLimitError extends Error {}
+export const DAILY_LIMIT_MESSAGE =
+  "Still Looking runs on a free daily allowance, and today's has been used up. " +
+  "It resets every day at 00:00 UTC (8 PM US Eastern time). Please try again after that.";
+
+export function isDailyLimit(reason: string): boolean {
+  return /daily free allocation|neurons/i.test(reason);
+}
+
 export async function generateImage(opts: {
   prompt: string;
   images: Blob[]; // image 0 = child, then family members
@@ -36,6 +46,7 @@ export async function generateImage(opts: {
       await new Promise((r) => setTimeout(r, 2000));
       continue;
     }
+    if (isDailyLimit(reason)) throw new DailyLimitError(reason);
     throw new Error(`Image model error: ${reason}`);
   }
 }
