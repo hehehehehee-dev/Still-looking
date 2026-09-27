@@ -214,6 +214,37 @@ Still Looking. Newest entries at the bottom of each day.
 - **Lesson:** a free tier's "resets at midnight" isn't a promise. Plan the demo and judging day so
   they don't depend on a fresh quota, and have a friendly message ready when it's out.
 
+### Question I asked: is the accuracy problem the model or the prompt?
+- **Mostly the model.** Evidence from our own data:
+  1. The aged images are only 0.30 similar to *the very photo they were made from*. One person
+     aged by a single year (9 → 10) dropped from 0.51 to 0.02. The model re-draws a new face
+     instead of editing the old one.
+  2. Changing the prompt only moved *which* mistake it made: prompt A aged the face but lost
+     identity; prompt B kept identity but didn't age. No wording got both, which points to a
+     limit of the model, not of the words.
+  3. The model is small and fast (4B parameters, 4 fixed steps), and its inputs must be under
+     512 px, so faces lose fine detail.
+- **Also realistic:** ArcFace is *built* to recognise people across ages, so "beat the original
+  photo" is a very high bar. A better goal: keep more identity (raise the 0.17) while still
+  looking the right age.
+- **Plan (all $0):** tonight's two experiments, then try the bigger FLUX.2 klein 9B on the 5 dev
+  people (~1,400 neurons per image, so it needs its own day), and add face framing.
+
+### Added: the family frames the child's face before upload
+- A square cropper in the browser, so the face fills the ~500 px image the model gets instead of
+  being a small part of a wide photo. It also lets a family pick the right child from a group photo.
+- I chose *manual* framing over automatic face detection: no extra AI model to download, and
+  families know which child is theirs.
+- It won't change the eval numbers (FG-NET photos are already tightly cropped), but it helps real,
+  messier family photos.
+
+### Added: cheaper ways to test
+- `AI_MODE=mock` in `.env.local` means no AI calls at all: the app sends back your own photo, with
+  a clear "Test mode" banner. Costs 0, good for testing the layout and buttons.
+- `AI_MODE=cheap` makes 1 image at 512 px instead of 3 at 768 px. Cloudflare charges per
+  512×512 "tile" of output, so this is roughly 7× cheaper (estimate, not yet measured).
+- The deployed site leaves `AI_MODE` empty, so families and judges get the full version.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

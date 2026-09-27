@@ -18,6 +18,7 @@ export async function generateImage(opts: {
   images: Blob[]; // image 0 = child, then family members
   seed: number;
   size?: number;
+  model?: string; // defaults to FLUX.2 [klein] 4B; the eval can try other models
 }): Promise<string> {
   const account = process.env.CLOUDFLARE_ACCOUNT_ID;
   const token = process.env.CLOUDFLARE_API_TOKEN;
@@ -34,7 +35,7 @@ export async function generateImage(opts: {
   // Cloudflare sometimes answers "Capacity temporarily exceeded" when busy; wait and retry once.
   for (let attempt = 1; ; attempt++) {
     const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${MODEL}`,
+      `https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${opts.model ?? MODEL}`,
       { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form },
     );
     const body = await res.json().catch(() => null);
