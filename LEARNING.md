@@ -327,6 +327,28 @@ Still Looking. Newest entries at the bottom of each day.
   removed · D = E + this person's own features (read by the vision model). Comparing E with A
   shows the effect of removing generic words; D with E shows the effect of personal features.
 
+### Result: neither my wording idea nor the two-pass idea helped (5 dev people)
+| Version | Similarity to real later photo | To own child photo |
+|---|---|---|
+| Baseline (unchanged photo) | 0.37 | – |
+| A: current prompt | 0.13 | 0.37 |
+| E: generic face wording removed | 0.13 | 0.38 |
+| D: + this person's own features (my idea) | 0.11 | 0.35 |
+| P2a / P2b: two passes | 0.13 / 0.12 | 0.36 / 0.35 |
+- All within ±0.02 of each other; with only 5 people that's noise, so **no version is better**.
+- **Looking at the images says the same:** for each person, all five versions look almost alike.
+  The result is decided mostly by the input photo and the model, and the wording barely matters.
+  That confirms "it's mostly the model, not the prompt".
+- **Two failures every version shared, which the prompt couldn't fix:**
+  - A girl (person 049) came out as a **boy in all versions**, even though the prompt said "teenage girl".
+  - A baby aged 0 → 8 stayed a **toddler wearing the same bib** in all versions.
+- The vision model described each child sensibly ("almond-shaped eyes, wide eye spacing, arched
+  eyebrows", and it spotted "a small mole on the lower right cheek"), but the image model didn't use
+  that information in a measurable way.
+- **Decision:** stop tuning the prompt; keep A in the app. It was a fair test of a reasonable
+  idea, the answer was "no", and that's worth knowing. Keeping family-confirmed marks in the app
+  costs nothing, but I won't claim they improve accuracy.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
