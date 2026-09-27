@@ -349,6 +349,23 @@ Still Looking. Newest entries at the bottom of each day.
   idea, the answer was "no", and that's worth knowing. Keeping family-confirmed marks in the app
   costs nothing, but I won't claim they improve accuracy.
 
+### Tried a bigger model: FLUX.2 klein 9B (5 dev people, same prompt and seed)
+| Model | Similarity to real later photo | To own child photo |
+|---|---|---|
+| Baseline (unchanged photo) | 0.37 | – |
+| 4B (the app's model) | 0.13 | 0.37 |
+| **9B (bigger)** | **0.10** | **0.22** |
+- **Better at following instructions:** the girl who came out as a boy with every 4B prompt is
+  finally a girl with 9B, and black-and-white photos are turned into natural colour.
+- **Worse at keeping the person:** 9B's faces are even cleaner and more "idealised", and less
+  like the child they came from (0.22 vs 0.37). It's the Age-ID trade-off again: a stronger model
+  follows the prompt ("an 18-year-old…") more and the photo less.
+- **Still failed the same hard case:** the baby aged 0 → 8 is still a toddler in a bib.
+- **Cost:** ~1,400 neurons per image vs ~73, about 20× more; only ~7 free images a day.
+- **Decision:** keep 4B in the app. "Bigger" isn't automatically "better" for this task; the
+  right next step would be a model built to *edit* faces while keeping identity, not a bigger
+  general image model.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
