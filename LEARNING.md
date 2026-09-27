@@ -303,6 +303,16 @@ Still Looking. Newest entries at the bottom of each day.
   aged image *and* the original, and ask it to restore the original's features while keeping the
   age). Test on the 5 dev people first. Skipped FRAN and ChildGAN's dataset for time; they're future work.
 
+### Confirmed: the free limit is a rolling 24 hours, not "per day"
+- The dashboard's "Neurons used today: 0/10k" only counts since 00:00 UTC. The **"Last 24 hours"**
+  chart showed ~11k neurons used (10.2k images + 0.8k vision), and the API stays blocked until
+  that usage is more than 24 hours old.
+- Also spotted there: the vision model had used 809 neurons, mostly from the "thinking" bug
+  (now fixed, ~25 per call).
+- Added `npm run quota`: asks the API directly for a 1-token reply (~0.05 neurons) and prints
+  OK or BLOCKED. More reliable than the dashboard.
+- **Lesson for the demo:** don't run heavy tests in the 24 hours before recording or judging.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
