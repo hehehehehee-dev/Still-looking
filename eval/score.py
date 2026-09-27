@@ -33,6 +33,7 @@ OUT = ROOT / "eval" / "outputs"
 GENERATED = OUT / "images"
 GENERATED_MULTI = OUT / "images_multi"
 GENERATED_FEATURES = OUT / "images_features"
+GENERATED_SAM = OUT / "images_sam"
 VARIATIONS = 3
 BUCKETS = {"under5": "Under 5 years", "5to10": "5 to 10 years", "over10": "Over 10 years"}
 
@@ -256,6 +257,7 @@ def main() -> None:
             "_v0": analyse(app, GENERATED / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED / f"{p['pair_id']}_v0.jpg").exists() else None,
             "_multi": analyse(app, GENERATED_MULTI / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_MULTI / f"{p['pair_id']}_v0.jpg").exists() else None,
             "_features": analyse(app, GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg").exists() else None,
+            "_sam": analyse(app, GENERATED_SAM / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_SAM / f"{p['pair_id']}_v0.jpg").exists() else None,
         })
 
     add_stranger_and_rank_scores(rows)
@@ -266,8 +268,9 @@ def main() -> None:
     features_arm = compare_arm(rows, "_features", with_features)
     if features_arm:
         features_arm["people_with_no_features_found"] = len(suggested) - len(with_features)
+    sam_arm = compare_arm(rows, "_sam")  # editing model (SAM) vs our redrawing model, variation 0
     for r in rows:
-        for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features"):
+        for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features", "_sam"):
             del r[k]
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -291,6 +294,7 @@ def main() -> None:
         "overall": summarise(rows),
         "multi_photo": multi_photo,
         "distinguishing_features": features_arm,
+        "sam_editing_model": sam_arm,
         "buckets": {k: {"label": BUCKETS[k], **summarise([r for r in rows if r["bucket"] == k])}
                     for k in BUCKETS if any(r["bucket"] == k for r in rows)},
     }
@@ -313,7 +317,8 @@ def main() -> None:
     (OUT / "results_table.md").write_text("\n".join(lines) + "\n")
 
     print("\n".join(lines))
-    for name, m in (("More photos of the child", multi_photo), ("AI-suggested features, unchecked", features_arm)):
+    for name, m in (("More photos of the child", multi_photo), ("AI-suggested features, unchecked", features_arm),
+                    ("SAM editing model instead of FLUX", sam_arm)):
         if m:
             print(f"\n{name} ({m['pairs']} people): similarity {m['single_photo_mean']} normal -> "
                   f"{m['multi_photo_mean']} with it (change {m['improvement_mean']:+}, 95% range {m['improvement_ci95']}); "

@@ -366,6 +366,21 @@ Still Looking. Newest entries at the bottom of each day.
   right next step would be a model built to *edit* faces while keeping identity, not a bigger
   general image model.
 
+### Reconsidering "edit" vs "redraw" (my question: why didn't we edit the existing face?)
+- Apps like FaceApp or gender-swap filters **edit** a face: they move it in a face model's
+  "latent space" toward "older" or "female" and keep pose, light and most pixels. Our model **redraws**
+  a new picture from the photo plus instructions. Also, those apps are never scored against a real
+  answer, and child → adult (bones grow) is much harder than adult → old (wrinkles, grey hair).
+- **Why we didn't pick an editing model at the start:** the pitch was family-guided, and the
+  editing model SAM takes only one photo (no family photos). Then the $0 choice led to Cloudflare,
+  which has no face-editing model. SAM was planned as a comparison, but was dropped when we switched.
+- **What changed:** the eval showed family guidance can't be measured and redrawing loses
+  identity, so the main reason to skip editing is weaker now. Changing course when data says so
+  is fine, but editing isn't automatically better for children, so **measure first**: run SAM
+  (via Replicate, ~$0.004/image) on the same 42 people and score it the same way.
+- Can SAM run on Vercel itself? No: it needs a GPU and PyTorch. Vercel can only *call* it
+  through Replicate's API, the same way we call Cloudflare today.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

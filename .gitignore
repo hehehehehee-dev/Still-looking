@@ -54,3 +54,4 @@ next-env.d.ts
 /eval/.venv/
 /eval/outputs/images_multi/
 /eval/outputs/images_features/
+/eval/outputs/images_sam/
