@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { planAges, type AgePlan } from "@/lib/age";
-import { MAX_INPUT_IMAGES } from "@/lib/limits";
+import { MAX_FEATURES, MAX_INPUT_IMAGES } from "@/lib/limits";
 import { shrinkPhoto } from "@/lib/resize";
 import type { Sex } from "@/lib/prompt";
 import Results, { type ResultData } from "./Results";
@@ -28,6 +28,9 @@ export default function CreateFlow() {
   const [sex, setSex] = useState<Sex>("unspecified");
   const [family, setFamily] = useState<FamilyEntry[]>([]);
   const [understood, setUnderstood] = useState(false);
+  const [featuresText, setFeaturesText] = useState(""); // one distinguishing feature per line
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestNote, setSuggestNote] = useState("");
 
   const [status, setStatus] = useState<"form" | "loading" | "done">("form");
   const [error, setError] = useState("");
@@ -51,6 +54,31 @@ export default function CreateFlow() {
     setFamily((list) => list.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   }
 
+  // Ask the vision model for suggestions; they go into the text box for the family to check
+  async function suggestFeatures() {
+    if (!childFile) return setSuggestNote("Choose the child's photo first.");
+    setSuggesting(true);
+    setSuggestNote("");
+    try {
+      const form = new FormData();
+      form.append("childPhoto", await shrinkPhoto(childFile), "child.jpg");
+      const res = await fetch("/api/features", { method: "POST", body: form });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !Array.isArray(data?.features)) throw new Error(data?.error ?? "Could not suggest features.");
+      if (data.features.length === 0) {
+        setSuggestNote("No clear distinguishing features were found in this photo. You can still add your own.");
+      } else {
+        const existing = featuresText.trim();
+        setFeaturesText((existing ? existing + "\n" : "") + data.features.join("\n"));
+        setSuggestNote("Suggestions added. Please check each line and delete anything that isn't right.");
+      }
+    } catch (err) {
+      setSuggestNote(err instanceof Error ? err.message : "Could not suggest features.");
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -66,6 +94,9 @@ export default function CreateFlow() {
       form.append("dateOfBirth", dateOfBirth);
       form.append("photoDate", photoDate);
       form.append("sex", sex);
+      for (const line of featuresText.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, MAX_FEATURES)) {
+        form.append("feature", line);
+      }
       for (const [i, f] of filledFamily.entries()) {
         form.append(`familyPhoto${i}`, await shrinkPhoto(f.file!), `family${i}.jpg`);
         form.append(`familyRelation${i}`, f.relation);
@@ -154,10 +185,34 @@ export default function CreateFlow() {
         </div>
       </section>
 
-      {/* Step 2: optional family photos */}
+      {/* Step 2: distinguishing features (optional) */}
+      <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+        <div>
+          <h2 className="text-xl font-semibold">2. Distinguishing features <span className="text-base font-normal text-muted">(optional)</span></h2>
+          <p className="mt-1 text-sm text-muted">
+            Marks that usually last for life, such as moles, scars, birthmarks or an unusual ear shape, one per line.
+            You know your child best: add marks the photo doesn&apos;t show. Eye colour can still change in the first
+            few years, and some birthmarks fade.
+          </p>
+        </div>
+        <textarea rows={4} className={inputClass} value={featuresText} onChange={(e) => setFeaturesText(e.target.value)}
+          placeholder={"small mole under the left eye\nscar on the chin"} aria-label="Distinguishing features, one per line" />
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={suggestFeatures} disabled={suggesting || loading}
+            className="rounded-lg border border-border px-4 py-2 text-sm hover:border-accent disabled:opacity-50">
+            {suggesting ? "Looking at the photo…" : "Suggest from the photo (AI)"}
+          </button>
+          <span className="text-xs text-muted">
+            AI suggestions can be wrong (for example, dust on an old photo). They are only used after you check them.
+          </span>
+        </div>
+        {suggestNote && <p className="text-sm text-muted" role="status">{suggestNote}</p>}
+      </section>
+
+      {/* Step 3: optional family photos */}
       <section className="space-y-4 rounded-xl border border-border bg-surface p-5">
         <div>
-          <h2 className="text-xl font-semibold">2. Family photos <span className="text-base font-normal text-muted">(optional)</span></h2>
+          <h2 className="text-xl font-semibold">3. Family photos <span className="text-base font-normal text-muted">(optional)</span></h2>
           <p className="mt-1 text-sm text-muted">
             Forensic artists use photos of biological parents and siblings to see which features run in the family.
             Photos taken when they were about{" "}
@@ -198,7 +253,7 @@ export default function CreateFlow() {
         )}
       </section>
 
-      {/* Step 3: acknowledgement + submit */}
+      {/* Step 4: acknowledgement + submit */}
       <section className="space-y-4">
         <label className="flex items-start gap-3 text-sm">
           <input type="checkbox" className="mt-1 h-4 w-4 accent-accent" checked={understood}

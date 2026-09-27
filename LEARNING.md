@@ -170,6 +170,28 @@ Still Looking. Newest entries at the bottom of each day.
   picture how a child might have grown"*, **never** as a better match than the original photo,
   and should tell families to always share the original photo too.
 
+### Two new ideas to fix the "beautified face" problem (they run when tonight's quota resets)
+1. **More photos of the child.** One photo shows one angle, one smile, one light. With 2–3
+   photos the model may see which features are really *theirs*. FG-NET has several childhood
+   photos per person, so this is **measurable**: 31 of the 42 test people have extra childhood
+   photos taken at the same age or *younger* (never older, which would be peeking at the future).
+   Same seed as the normal run, so the only difference is the extra photos.
+2. **Distinguishing features (my idea after seeing the results).** Missing-child posters list
+   "distinguishing marks". A vision model (Gemma 4, also on Cloudflare, same free quota and privacy)
+   *suggests* moles, scars, birthmarks, eye colour… and they're written into the image prompt.
+   - **The family checks the list first.** The model can mistake dust on an old scan for a mole,
+     and parents know marks the photo doesn't show.
+   - **Decided not to let AI guess race/ethnicity:** unreliable, sensitive, and skin tone is
+     already in the photo. Families can type it themselves if they want.
+   - Also told it to skip things that change in childhood (baby teeth), and the form warns that
+     eye colour and some birthmarks change in the first years.
+   - **Measurable, but only the worst case:** in the eval nobody checks the AI's suggestions.
+- **Engineering note:** I added both as *optional* extra text in the prompt. I checked that
+  the normal prompt is exactly the same as before, character for character, so the
+  results already measured stay valid.
+- **Mistake I made:** said the quota resets at "7 AM Vietnam time". The computer's clock is on
+  US Eastern time, so it's 8 PM EDT. Lesson: check the clock, don't assume.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

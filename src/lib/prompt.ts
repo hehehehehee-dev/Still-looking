@@ -45,19 +45,31 @@ export function buildPrompt(opts: {
   targetAge: number;
   sex: Sex;
   family: FamilyRef[];
+  extraChildAges?: number[]; // ages in any extra photos of the same child (images 1..n)
+  features?: string[]; // distinguishing features confirmed by the family
 }): string {
-  const { photoAge, targetAge, sex, family } = opts;
+  const { photoAge, targetAge, sex, family, extraChildAges = [], features = [] } = opts;
+  const extras = extraChildAges.length;
 
   const parts = [
     `A realistic passport-style portrait photo of ${/^(8|11|18)/.test(String(targetAge)) ? "an" : "a"} ${lifeStage(targetAge, sex)}.`,
     `This is the same person as in image 0, who was ${photoAge} years old in that photo and has now grown up.`,
-    `Show ${growthChanges(targetAge, sex)}.`,
-    "Keep their identity from image 0: eye shape, eyebrow shape, nose shape, ears, hairline and skin tone.",
   ];
+  if (extras > 0) {
+    const list = extraChildAges.map((age, i) => `image ${i + 1} at age ${age}`).join(", ");
+    parts.push(`More photos of this same person as a child: ${list}. Use all of them to understand their face.`);
+  }
+  parts.push(
+    `Show ${growthChanges(targetAge, sex)}.`,
+    `Keep their identity from ${extras > 0 ? `images 0 to ${extras}` : "image 0"}: eye shape, eyebrow shape, nose shape, ears, hairline and skin tone.`,
+  );
+  if (features.length > 0) {
+    parts.push(`Keep these distinguishing features, adjusted naturally for growth: ${features.join("; ")}.`);
+  }
 
   if (family.length > 0) {
     const refs = family
-      .map((f, i) => `image ${i + 1} is their biological ${f.relation} at about age ${f.age}`)
+      .map((f, i) => `image ${extras + i + 1} is their biological ${f.relation} at about age ${f.age}`)
       .join("; ");
     parts.push(
       `For reference, ${refs}.`,

@@ -7,6 +7,7 @@ import { planAges } from "@/lib/age";
 import { buildPrompt, type FamilyRef, type Sex } from "@/lib/prompt";
 import { generateImage } from "@/lib/cloudflare";
 import { MAX_INPUT_IMAGES } from "@/lib/limits";
+import { cleanFeatures } from "@/lib/features";
 
 export const maxDuration = 60; // seconds; 3 parallel generations usually take 10-30s
 
@@ -56,8 +57,11 @@ export async function POST(request: Request) {
     images.push(photo);
   }
 
-  // 3. Same instructions, different random seed each time = 3 different variations
-  const prompt = buildPrompt({ ...ages, sex, family });
+  // 3. Distinguishing features the family confirmed (optional, checked and shortened)
+  const features = cleanFeatures(form.getAll("feature"));
+
+  // 4. Same instructions, different random seed each time = 3 different variations
+  const prompt = buildPrompt({ ...ages, sex, family, features });
   const results = await Promise.allSettled(
     Array.from({ length: VARIATIONS }, () =>
       generateImage({ prompt, images, seed: Math.floor(Math.random() * 1_000_000) }),
@@ -75,5 +79,6 @@ export async function POST(request: Request) {
     images: generated,
     ...ages,
     familyCount: family.length,
+    featureCount: features.length,
   });
 }

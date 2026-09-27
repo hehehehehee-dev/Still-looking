@@ -31,6 +31,8 @@ ROOT = Path(__file__).resolve().parent.parent
 FGNET = ROOT / "data" / "FGNET" / "images"
 OUT = ROOT / "eval" / "outputs"
 GENERATED = OUT / "images"
+GENERATED_MULTI = OUT / "images_multi"
+GENERATED_FEATURES = OUT / "images_features"
 VARIATIONS = 3
 BUCKETS = {"under5": "Under 5 years", "5to10": "5 to 10 years", "over10": "Over 10 years"}
 
@@ -85,6 +87,37 @@ def add_stranger_and_rank_scores(rows):
         r["aged_to_strangers"] = round(float(others.mean()), 4)
         r["aged_rank"] = int((aged_scores > aged_scores[i]).sum()) + 1  # 1 = right person ranked first
         r["baseline_rank"] = int((young_scores > young_scores[i]).sum()) + 1
+
+
+def compare_arm(rows, key, only_ids=None):
+    """A/B experiments from generate.mjs (--multi, --features).
+    Compares variation 0 made the normal way with variation 0 made with the extra input
+    (same photo, same seed), so the only difference is the thing being tested."""
+    olds = np.stack([r["_old"] for r in rows])
+    both = [(i, r) for i, r in enumerate(rows)
+            if r["_v0"] is not None and r[key] is not None and (only_ids is None or r["pair_id"] in only_ids)]
+    if not both:
+        return None
+    single = [cos(r["_v0"], r["_old"]) for _, r in both]
+    multi = [cos(r[key], r["_old"]) for _, r in both]
+    diffs = [m - s for m, s in zip(multi, single)]
+
+    def top1(emb, i):
+        scores = olds @ emb
+        return int((scores > scores[i]).sum()) == 0
+
+    return {
+        "pairs": len(both),
+        "single_photo_mean": round(float(np.mean(single)), 3),
+        "multi_photo_mean": round(float(np.mean(multi)), 3),
+        "baseline_mean": round(float(np.mean([r["baseline"] for _, r in both])), 3),
+        "improvement_mean": round(float(np.mean(diffs)), 3),
+        "improvement_ci95": bootstrap_ci(diffs),
+        "multi_better_pct": round(100 * np.mean([d > 0 for d in diffs])),
+        "multi_beat_baseline_pct": round(100 * np.mean([m > r["baseline"] for m, (_, r) in zip(multi, both)])),
+        "single_top1_pct": round(100 * np.mean([top1(r["_v0"], i) for i, r in both])),
+        "multi_top1_pct": round(100 * np.mean([top1(r[key], i) for i, r in both])),
+    }
 
 
 def summarise(rows):
@@ -220,11 +253,21 @@ def main() -> None:
             "real_old_est_age": round(old_est_age, 1),
             "variations_scored": len(sims),
             "_young": young_emb, "_old": old_emb, "_aged": aged_embs,  # kept in memory only
+            "_v0": analyse(app, GENERATED / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED / f"{p['pair_id']}_v0.jpg").exists() else None,
+            "_multi": analyse(app, GENERATED_MULTI / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_MULTI / f"{p['pair_id']}_v0.jpg").exists() else None,
+            "_features": analyse(app, GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg").exists() else None,
         })
 
     add_stranger_and_rank_scores(rows)
+    multi_photo = compare_arm(rows, "_multi")
+    features_file = OUT / "features.json"
+    suggested = json.loads(features_file.read_text()) if features_file.exists() else {}
+    with_features = {pid for pid, f in suggested.items() if f}  # only people who got at least one feature
+    features_arm = compare_arm(rows, "_features", with_features)
+    if features_arm:
+        features_arm["people_with_no_features_found"] = len(suggested) - len(with_features)
     for r in rows:
-        for k in ("_young", "_old", "_aged"):
+        for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features"):
             del r[k]
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -246,6 +289,8 @@ def main() -> None:
         "generated_images_missing": missing,
         "generated_images_no_face": no_face_generated,
         "overall": summarise(rows),
+        "multi_photo": multi_photo,
+        "distinguishing_features": features_arm,
         "buckets": {k: {"label": BUCKETS[k], **summarise([r for r in rows if r["bucket"] == k])}
                     for k in BUCKETS if any(r["bucket"] == k for r in rows)},
     }
@@ -268,6 +313,12 @@ def main() -> None:
     (OUT / "results_table.md").write_text("\n".join(lines) + "\n")
 
     print("\n".join(lines))
+    for name, m in (("More photos of the child", multi_photo), ("AI-suggested features, unchecked", features_arm)):
+        if m:
+            print(f"\n{name} ({m['pairs']} people): similarity {m['single_photo_mean']} normal -> "
+                  f"{m['multi_photo_mean']} with it (change {m['improvement_mean']:+}, 95% range {m['improvement_ci95']}); "
+                  f"better for {m['multi_better_pct']}% of people; right person first "
+                  f"{m['single_top1_pct']}% -> {m['multi_top1_pct']}%")
     print(f"\nScored {len(rows)} pairs. Excluded (no face found in FG-NET photo): {excluded}. "
           f"Pairs not generated yet: {len(not_generated)}. Aged images with no detectable face: {no_face_generated}. Missing images: {missing}.")
 

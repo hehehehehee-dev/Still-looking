@@ -37,6 +37,8 @@
     "real_est_age_mean": 32.9,
     "aged_age_error_mean": 12.5
   },
+  "multi_photo": null,
+  "distinguishing_features": null,
   "buckets": {
     "under5": {
       "label": "Under 5 years",

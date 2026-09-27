@@ -52,3 +52,5 @@ next-env.d.ts
 
 # eval Python environment
 /eval/.venv/
+/eval/outputs/images_multi/
+/eval/outputs/images_features/

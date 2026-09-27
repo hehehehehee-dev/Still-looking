@@ -9,6 +9,7 @@ export type ResultData = {
   targetAge: number;
   gapYears: number;
   familyCount: number;
+  featureCount: number;
   originalUrl: string;
 };
 
@@ -21,7 +22,8 @@ export default function Results({ data, onStartOver }: { data: ResultData; onSta
         <h1 className="text-3xl font-semibold">Possible appearance at age {data.targetAge}</h1>
         <p className="mt-2 text-muted">
           {urls.length} variations from a photo at age {data.photoAge}
-          {data.familyCount > 0 ? `, guided by ${data.familyCount} family photo${data.familyCount > 1 ? "s" : ""}` : ""}.
+          {data.familyCount > 0 ? `, guided by ${data.familyCount} family photo${data.familyCount > 1 ? "s" : ""}` : ""}
+          {data.featureCount > 0 ? ` and ${data.featureCount} distinguishing feature${data.featureCount > 1 ? "s" : ""} you confirmed` : ""}.
           They differ on purpose: no one can know exactly how a face will change.
         </p>
       </div>

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Python environment and throwaway test files
+    "eval/.venv/**",
+    "scratch/**",
   ]),
 ]);
 

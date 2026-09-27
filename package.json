@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "eval:generate": "node --no-warnings --env-file=.env.local eval/generate.mjs",
+    "eval:multi": "node --no-warnings --env-file=.env.local eval/generate.mjs --multi",
+    "eval:features": "node --no-warnings --env-file=.env.local eval/generate.mjs --features",
+    "eval:score": "python eval/run_score.py",
+    "eval:all": "npm run eval:generate && npm run eval:multi && npm run eval:features && npm run eval:score"
   },
   "dependencies": {
     "next": "16.3.6",
