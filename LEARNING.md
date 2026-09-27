@@ -62,6 +62,58 @@ Still Looking. Newest entries at the bottom of each day.
 - `create-next-app` refused "Still Looking" because npm package names can't have capitals or
   spaces. Fixed by creating the app as `still-looking` in a subfolder and moving it up.
 
+### Ahead of schedule: built the Day 2 work (generate API + upload form + results)
+- **How the app is split:**
+  - `src/app/api/generate/route.ts` is the server part. It checks the upload, works out the ages,
+    builds the prompt, and asks Cloudflare for 3 variations at the same time.
+  - `src/app/create/` is the page the family sees.
+  - `src/lib/` holds small helpers: age math, prompt writing, the Cloudflare call, photo shrinking.
+- **Decision: results show on the same page as the form, not a separate `/results` page.** A
+  separate page would need to put the images somewhere (URL, browser storage, or a server) to
+  pass them along. Keeping them only in the page's memory means refreshing or closing the page really
+  deletes them. That makes the privacy promise true by design, not just a policy.
+- **Decision: shrink photos in the browser before upload.** The model needs images under 512×512
+  anyway, and hosting platforms reject big uploads. The full-size original never leaves the device.
+- **Decision: the server re-checks everything** (file type, size, dates, ages). It never trusts
+  what the page sends, because anyone can call an API directly.
+- **Decision: the "confidence note" is not a made-up score.** The model gives no confidence
+  number. The note will quote the real eval result for the same age gap (filled in on Day 3).
+- **Tests:**
+  - The API returned 3 variations in ~9 s.
+  - Wrong inputs (no photo, photo dated before birth, missing family age, non-image file) each
+    return a clear error message.
+  - Family mode ran with a stand-in photo from FG-NET. It only tests the mechanics, since FG-NET
+    has no real family members. The result still looked like the child, not the stand-in.
+- **Surprise worth telling judges:** for the browser test I uploaded a *cartoon* face (an oval
+  with two dots). The model still returned 3 realistic teenage boys, even though sex was set to
+  "prefer not to say". **It never says "I can't tell". It invents a confident-looking face.**
+  That's exactly why the app must show 3 variations, the disclaimers, and the measured accuracy
+  instead of one "answer".
+- **Problem:** one run took 25 s instead of 9 s (Cloudflare's speed varies). Changed the waiting
+  message to "usually 10–30 seconds" and gave the server 60 s before it times out.
+- **Problem I spotted while testing the web page myself: the results still looked like children**
+  (about 13–14 instead of 18). I had left sex on "prefer not to say". Tried 4 prompt versions on the
+  same photo (FG-NET 001, age 5 → 18):
+  | Version | What changed | Result |
+  |---|---|---|
+  | current | called them "a child at age 5… as an 18-year-old adult" | ~13–14, still a child |
+  | v3 | added "no childlike features such as round cheeks, small chin…" | one seed came out **~55 years old** |
+  | v4 | positive wording only + a life stage ("the age of a university student") | 17–22 on 5 of 5 images |
+  | v4 + "is now 13 years older" | added the number of years | all 3 came out **~45–55** |
+  | final | v4, saying "has now grown up" instead | ~16–17 if sex unknown, **~18–22 if sex = boy** |
+- **What I learned about image models:**
+  1. **They don't understand "no".** Writing "no round cheeks" still puts "round cheeks" in its head.
+  2. **Some words are heavy.** "Child" pulled results young; "13 years older" pulled them old.
+  3. **Naming a familiar life stage** ("high-school student", "university student") steadies the age.
+  4. **Telling it the sex helps a lot**, so the form now says so next to that field.
+  5. **The same prompt gives very different ages with different seeds.** Judging by eye from a
+     few pictures is unreliable, so the Day 3 eval will also **measure the apparent age of every
+     result with an age-estimation model**, not only whether it looks like the right person.
+- **Problem:** one request failed with "Capacity temporarily exceeded" (Cloudflare busy). The app now
+  waits 2 seconds and retries once.
+- **Free-tier maths:** Cloudflare's dashboard showed 218 neurons for the first 3 images, so
+  ~73 neurons per image, or about **135 free images per day** (45 app runs).
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
