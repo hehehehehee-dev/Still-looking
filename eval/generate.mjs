@@ -99,6 +99,11 @@ for (const [index, pair] of pairs.entries()) {
     }
     features = featureCache[pair.pair_id];
     fs.writeFileSync(FEATURES_FILE, JSON.stringify(featureCache, null, 2));
+    if (features.length === 0) {
+      // same prompt as the normal run, so an image would add nothing; save the quota
+      console.log(`${pair.pair_id}  no clear features found, skipped`);
+      continue;
+    }
   }
 
   const prompt = buildPrompt({

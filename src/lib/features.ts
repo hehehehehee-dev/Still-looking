@@ -40,7 +40,10 @@ export async function suggestFeatures(photo: Blob): Promise<string[]> {
           ],
         },
       ],
-      max_tokens: 300,
+      // Gemma 4 "thinks" before answering by default, and the thinking used up the whole token
+      // limit, leaving an empty answer. A short list doesn't need it, so it's switched off.
+      chat_template_kwargs: { enable_thinking: false },
+      max_tokens: 400,
       temperature: 0.2,
     }),
   });

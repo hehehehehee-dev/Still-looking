@@ -102,17 +102,31 @@ longer than the documented 00:00 UTC to come back.
 
 ## Accuracy results
 
-> Numbers below are from the eval run on **38 of 42** test people; they will be updated when the run completes.
+> Eval run on **42 people** from FG-NET, 3 aged images each (126 images).
 > Full numbers: [`eval/outputs/summary.json`](eval/outputs/summary.json) · per-person: [`eval/outputs/results.csv`](eval/outputs/results.csv)
 
 ![Face similarity to the real later photo, by age gap](eval/outputs/similarity_by_gap.png)
 
 | | Original childhood photo (do nothing) | **Aged by Still Looking** | Other people (chance) |
 |---|---|---|---|
-| Similarity to the real later photo (ArcFace) | 0.40 | **0.17** | 0.03 |
-| Right person ranked first among 38 | 84% | **45%** | – |
-| Aged image beat the original photo | – | **0 of 38** | – |
-| Aged image closer to the right person than to strangers | – | **89%** | – |
+| Similarity to the real later photo (ArcFace) | 0.42 | **0.17** | 0.03 |
+| Right person ranked first among 42 | 86% | **45%** | – |
+| Aged image beat the original photo | – | **0 of 42** | – |
+| Aged image closer to the right person than to strangers | – | **90%** | – |
+
+By age gap (right person ranked first, original photo / aged image): under 5 years 93% / 57% ·
+5–10 years 100% / 64% · over 10 years 64% / **14%**. Full table: [`eval/outputs/results_table.md`](eval/outputs/results_table.md).
+
+**Can more information help?** (same photo, same seed, only one thing changed)
+
+| Experiment | People | Similarity: normal → with it | 95% range of the change | Verdict |
+|---|---|---|---|---|
+| Up to 2 extra childhood photos | 31 | 0.187 → 0.169 | −0.044 to +0.007 | No measurable help |
+| AI-suggested features (unchecked by a family) | 18* | 0.168 → 0.167 | −0.031 to +0.022 | No measurable help |
+
+\*The free quota ran out partway; 7 more people had no clear features to add. On old, blurry scans the vision model
+mostly found only "dark eyes" or "thick eyebrows", so this is a weak test of the idea: real families can add marks
+(scars, birthmarks) a photo can't show.
 
 **In plain words:** the aged images keep part of the child's identity (far above chance), but a
 face-recognition model matched the **original** childhood photo to the grown-up person better than our

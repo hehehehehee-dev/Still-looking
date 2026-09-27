@@ -42,6 +42,12 @@ const s = summary as unknown as {
 
 const beatCount = Math.round((s.overall.beat_baseline_pct / 100) * s.overall.pairs);
 
+/** "+0.02", "-0.02", or "0.00" (never "-0.00") */
+function signed(n: number): string {
+  const text = n.toFixed(2);
+  return Number(text) === 0 ? "0.00" : Number(text) > 0 ? `+${text}` : text;
+}
+
 function Tile({ label, value, note }: { label: string; value: string; note: string }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
@@ -61,7 +67,7 @@ function ExperimentResult({ title, exp, what }: { title: string; exp: Experiment
         <p className="mt-2 text-sm leading-relaxed">
           Tested on {exp.pairs} people. Similarity to the real later photo went from{" "}
           <strong>{exp.single_photo_mean.toFixed(2)}</strong> to <strong>{exp.multi_photo_mean.toFixed(2)}</strong>{" "}
-          ({exp.improvement_mean >= 0 ? "+" : ""}{exp.improvement_mean.toFixed(2)}; 95% range{" "}
+          ({signed(exp.improvement_mean)}; 95% range{" "}
           {exp.improvement_ci95[0].toFixed(2)} to {exp.improvement_ci95[1].toFixed(2)}), better for{" "}
           {exp.multi_better_pct}% of people. Right person picked first: {exp.single_top1_pct}% → {exp.multi_top1_pct}%.{" "}
           {exp.improvement_ci95[0] > 0

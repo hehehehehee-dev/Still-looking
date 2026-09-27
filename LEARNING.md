@@ -245,6 +245,42 @@ Still Looking. Newest entries at the bottom of each day.
   512×512 "tile" of output, so this is roughly 7× cheaper (estimate, not yet measured).
 - The deployed site leaves `AI_MODE` empty, so families and judges get the full version.
 
+### The quota came back at 12:33 UTC (not 00:00), and the first run hit two new problems
+- My waiting script checked every 15 minutes and started the eval by itself at 12:33 UTC, about 24
+  hours after yesterday's heavy use. That fits the "rolling 24 hours" guess.
+- **Problem 1: many "Request timeout" errors from Cloudflare.** The app only retried "capacity"
+  errors. It now retries timeouts too (3 attempts, waiting a bit longer each time).
+- **Problem 2: the distinguishing-features experiment silently did nothing.** Every person got
+  an empty feature list, so 31 images were made with the *normal* prompt, wasting quota.
+  - I printed the model's raw reply. Gemma 4 **"thinks" before answering** (it writes out its
+    reasoning first), and that used up the whole 300-token limit, so the actual answer was
+    empty or cut off.
+  - Raising the limit to 1,200 wasn't enough for some photos. **Turning thinking off**
+    (`enable_thinking: false`) fixed it: short, clean answers for ~25 neurons each.
+  - Deleted the 31 invalid images and re-ran. The eval now also skips people with no features
+    found, since their prompt would be identical to the normal one.
+- **Lesson:** my code treated "no answer" the same as "the model found nothing". I should have
+  looked at a few real replies *before* running 40 of them. Now I always check a small sample by eye first.
+- **Honest note about the features:** on these old, blurry scans the model is very cautious and
+  mostly finds only "dark eyes" or "thick eyebrows", because I told it not to guess. A real family would
+  add actual marks (a scar, a birthmark), which a dataset like FG-NET can't provide.
+
+### Final eval results (all 42 people, 126 aged images)
+- **Main result didn't change with the last 4 people:** aged images 0.17 vs original photo 0.42;
+  0 of 42 beat the original; 90% were closer to the right person than to strangers; right person
+  ranked first 45% (aged) vs 86% (original). Over 10 years: 14% vs 64%.
+- **Extra childhood photos (31 people): no measurable help.** 0.187 → 0.169; the 95% range
+  (−0.044 to +0.007) includes zero, and it was slightly worse on average. My guess: with several
+  faces to look at, the model blends them rather than learning what's constant.
+- **AI-suggested features (18 people, unfinished because the quota ran out): no measurable help.**
+  0.168 → 0.167. But this is a weak test: the model mostly found "dark eyes".
+- **What I take from this:** my two ideas were reasonable, and testing them *properly* (same seed,
+  one change at a time, a 95% range instead of one lucky example) showed they don't fix the core
+  problem, which is the model redrawing faces. That's a real finding, not a failure to report.
+- **I'm keeping both features in the app anyway, for honest reasons:** extra photos cost nothing,
+  and families' own marks (a scar, a birthmark) are exactly what a photo-only test can't measure.
+  The Accuracy page states clearly that neither was shown to improve the match.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

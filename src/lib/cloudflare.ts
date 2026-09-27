@@ -32,7 +32,8 @@ export async function generateImage(opts: {
   form.append("height", size);
   form.append("seed", String(opts.seed));
 
-  // Cloudflare sometimes answers "Capacity temporarily exceeded" when busy; wait and retry once.
+  // Cloudflare sometimes answers "Capacity temporarily exceeded" or "Request timeout" when busy;
+  // wait and retry (up to 3 attempts in total).
   for (let attempt = 1; ; attempt++) {
     const res = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${opts.model ?? MODEL}`,
@@ -43,8 +44,8 @@ export async function generateImage(opts: {
     if (res.ok && typeof image === "string") return image; // base64-encoded image
 
     const reason: string = body?.errors?.[0]?.message ?? `HTTP ${res.status}`;
-    if (attempt < 2 && /capacity/i.test(reason)) {
-      await new Promise((r) => setTimeout(r, 2000));
+    if (attempt < 3 && /capacity|timeout/i.test(reason)) {
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
       continue;
     }
     if (isDailyLimit(reason)) throw new DailyLimitError(reason);
