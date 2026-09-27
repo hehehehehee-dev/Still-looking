@@ -281,6 +281,28 @@ Still Looking. Newest entries at the bottom of each day.
   and families' own marks (a scar, a birthmark) are exactly what a photo-only test can't measure.
   The Accuracy page states clearly that neither was shown to improve the match.
 
+### Research: how do other projects and papers do this?
+- **GitHub "find missing children" projects** (e.g. MissingChildIdentification, Progressive-Face-Ageing):
+  mostly student projects with older GANs plus a face-matching database. None I found publish
+  accuracy or explain privacy, and I found none that uses parents'/siblings' photos to age a specific
+  child. (I say "I didn't find", not "nobody has done it".)
+- **The big one:** the 2025 paper *Cradle2Cane* names exactly what my eval found: the
+  **"Age-ID trade-off"**. The more you age a face, the more identity you lose, and the reverse.
+  My prompt A vs prompt B results were this trade-off. I rediscovered and measured a known
+  research problem on my own, with free tools.
+- **How researchers fight it:**
+  - *Two passes:* first age the face, then inject identity back from the original photo (Cradle2Cane).
+  - *Personal fine-tuning:* train the model a little on 3–5 photos of the same person (SelfAge).
+    This explains why my "extra photos" test didn't help: I only *showed* the photos to the model,
+    I didn't *train* it on them.
+  - *Edit, don't redraw:* networks like FRAN (face_reaging) predict only the *change* and add it
+    to the original.
+- **Papers measure the same way I do:** ArcFace identity similarity plus an age estimator. Good to
+  know my method matches the field.
+- **Decision:** try a free imitation of the two-pass idea with our own model (pass 2: give it the
+  aged image *and* the original, and ask it to restore the original's features while keeping the
+  age). Test on the 5 dev people first. Skipped FRAN and ChildGAN's dataset for time; they're future work.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
