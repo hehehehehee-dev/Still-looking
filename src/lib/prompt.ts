@@ -49,7 +49,7 @@ export function buildPrompt(opts: {
   const { photoAge, targetAge, sex, family } = opts;
 
   const parts = [
-    `A realistic passport-style portrait photo of a ${lifeStage(targetAge, sex)}.`,
+    `A realistic passport-style portrait photo of ${/^(8|11|18)/.test(String(targetAge)) ? "an" : "a"} ${lifeStage(targetAge, sex)}.`,
     `This is the same person as in image 0, who was ${photoAge} years old in that photo and has now grown up.`,
     `Show ${growthChanges(targetAge, sex)}.`,
     "Keep their identity from image 0: eye shape, eyebrow shape, nose shape, ears, hairline and skin tone.",

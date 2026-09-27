@@ -114,6 +114,62 @@ Still Looking. Newest entries at the bottom of each day.
 - **Free-tier maths:** Cloudflare's dashboard showed 218 neurons for the first 3 images, so
   ~73 neurons per image, or about **135 free images per day** (45 app runs).
 
+### Ahead of schedule again: the accuracy test ("eval"), Day 3's work
+- **How it works:** 3 scripts in `/eval`.
+  1. `select_pairs.py` picks 42 FG-NET people: a childhood photo plus a later photo each,
+     14 per age-gap group, one pair per person.
+  2. `generate.mjs` ages each childhood photo with **the app's own code** (same prompt, same
+     model, 3 variations).
+  3. `score.py` compares faces with ArcFace (InsightFace) and estimates ages.
+- **The key comparison is a "baseline":** how similar is the *unchanged* childhood photo to the
+  real later photo? If our aged image isn't more similar than that, aging didn't help.
+- **Problem: Python refused to download the face model** (an SSL certificate error, common on
+  Windows). Downloaded the same file with `curl` instead.
+- **Problem: the face detector missed 14 of 42 faces.** FG-NET photos are cropped tightly around
+  the face. The detector enlarges images to 640 px, which made the faces too big for it to spot.
+  Setting it to 320 px found all 14. **Lesson: check *why* data is missing before trusting results.**
+- **Pilot on 3 people: aging made the match worse in 3/3** (similarity 0.23 vs 0.46 baseline).
+  Looking at the images, the model "beautifies" faces into smooth, symmetrical stock-photo faces.
+  They look the right age, but lose what makes them *that* person.
+- **Tried to fix it without cheating:** tested 3 prompt versions on 5 *different* FG-NET people
+  (a "dev set") who are **not** in the 42-person test. Tuning the prompt on the test people
+  would make the test meaningless.
+  | Prompt | Similarity to real later photo (dev set) | Did it actually age the face? |
+  |---|---|---|
+  | Baseline: unchanged childhood photo | 0.37 | n/a |
+  | A (the app's prompt: passport-style) | 0.13 | Yes |
+  | B ("keep the same pose, lighting and photo style") | 0.24 | **Often no:** babies stayed babies |
+  | C ("keep natural imperfections, not idealised") | 0.20 | Partly |
+- **The trap I found:** B scored best only because it barely changed the photo. **A face-matching
+  score rewards doing nothing**, so it can't be the only measure. Our eval reports *both* the face
+  match and whether the image actually aged. I kept prompt A in the app, since a family needs
+  an image that actually shows the older age.
+- **The age-estimation model is unreliable on old scanned photos:** it guessed an 18-year-old in
+  FG-NET was 58. So the age check is reported next to the model's own error on the *real* photos,
+  and treated as a rough signal only.
+- **Why "do nothing" is a hard baseline to beat:** ArcFace was trained to recognise the *same
+  person across ages*, so it's already good at matching a child photo to the adult. Any
+  re-drawing of the face adds noise it has to see through.
+
+### Eval results (38 of 42 people; the last 4 ran out of free quota and finish tomorrow)
+- **Aging never beat doing nothing:** 0 of 38 people. Average similarity to the real later
+  photo: 0.17 aged vs 0.40 unchanged. The 95% range of the difference (−0.27 to −0.20) is entirely
+  below zero, so this isn't bad luck.
+- **But the aged images aren't random faces:** in 89% of cases the aged image was closer to the
+  right person than to the other 37 people's later photos (0.17 vs 0.03 "chance level").
+- **Picking the right person out of 38:** the unchanged photo picks the right adult first 84%
+  of the time; the aged image 45%. With gaps over 10 years: 64% vs 14%.
+- **The age check didn't work:** InsightFace's age model almost never guesses under ~20 for
+  children, even on the real photos (true average 16, estimated 33). So I can't claim the images
+  hit the right age. I can only show the chart and explain why it's inconclusive.
+- **Added a fairer second question after seeing the first result:** "is it better than
+  chance?" as well as "is it better than doing nothing?". One number alone would either oversell
+  or undersell the tool.
+- **What this means for the product:** the images look older, but a free image model re-draws
+  faces in a way that loses individual features. The app must present them as *"a way to
+  picture how a child might have grown"*, **never** as a better match than the original photo,
+  and should tell families to always share the original photo too.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

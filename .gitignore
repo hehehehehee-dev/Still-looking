@@ -49,3 +49,6 @@ next-env.d.ts
 # generated test images (may contain faces), keep out of the public repo
 /scratch/
 /eval/outputs/images/
+
+# eval Python environment
+/eval/.venv/
