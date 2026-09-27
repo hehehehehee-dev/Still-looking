@@ -207,3 +207,11 @@ suggestions), InsightFace buffalo_l (evaluation only; non-commercial research li
 - FG-NET Aging Database (research use).
 - InsightFace, Black Forest Labs (FLUX.2), Google (Gemma), Cloudflare Workers AI.
 - The forensic artists at NCMEC whose family-guided method inspired this project.
+
+## License
+
+The **code** in this repository is released under the [MIT License](LICENSE).
+This does **not** cover third-party data or models, which keep their own terms:
+the FG-NET dataset (research use only; not included here), InsightFace buffalo_l models
+(non-commercial research use; downloaded separately), and the AI models used through
+Cloudflare Workers AI (their providers' terms).
