@@ -4,6 +4,7 @@
 
 import { DAILY_LIMIT_MESSAGE, DailyLimitError } from "@/lib/cloudflare";
 import { suggestFeatures } from "@/lib/features";
+import { aiMode } from "@/lib/aiMode";
 
 export const maxDuration = 30;
 
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Please add a JPG, PNG or WebP photo of the child (under 1 MB)." }, { status: 400 });
   }
 
+  if (aiMode() === "mock") {
+    return Response.json({ features: ["(test) small mole under the left eye", "(test) brown eyes"] });
+  }
   try {
     return Response.json({ features: await suggestFeatures(photo) });
   } catch (err) {

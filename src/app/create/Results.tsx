@@ -11,6 +11,7 @@ export type ResultData = {
   familyCount: number;
   featureCount: number;
   originalUrl: string;
+  mock?: boolean; // developer test mode (AI_MODE=mock): no AI was used
 };
 
 export default function Results({ data, onStartOver }: { data: ResultData; onStartOver: () => void }) {
@@ -18,6 +19,11 @@ export default function Results({ data, onStartOver }: { data: ResultData; onSta
 
   return (
     <div className="space-y-8">
+      {data.mock && (
+        <p className="rounded-lg bg-warning-soft px-4 py-3 text-sm text-warning" role="status">
+          <strong>Test mode (AI_MODE=mock):</strong> no AI was used. These are copies of your photo.
+        </p>
+      )}
       <div>
         <h1 className="text-3xl font-semibold">Possible appearance at age {data.targetAge}</h1>
         <p className="mt-2 text-muted">

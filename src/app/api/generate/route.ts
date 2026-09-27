@@ -8,6 +8,7 @@ import { buildPrompt, type FamilyRef, type Sex } from "@/lib/prompt";
 import { DAILY_LIMIT_MESSAGE, DailyLimitError, generateImage } from "@/lib/cloudflare";
 import { MAX_INPUT_IMAGES } from "@/lib/limits";
 import { cleanFeatures } from "@/lib/features";
+import { aiMode } from "@/lib/aiMode";
 
 export const maxDuration = 60; // seconds; 3 parallel generations usually take 10-30s
 
@@ -62,9 +63,15 @@ export async function POST(request: Request) {
 
   // 4. Same instructions, different random seed each time = 3 different variations
   const prompt = buildPrompt({ ...ages, sex, family, features });
+  const mode = aiMode();
+  if (mode === "mock") {
+    // Developer test mode: no AI call, send the uploaded photo back 3 times
+    const echo = Buffer.from(await child.arrayBuffer()).toString("base64");
+    return Response.json({ images: [echo, echo, echo], ...ages, familyCount: family.length, featureCount: features.length, mock: true });
+  }
   const results = await Promise.allSettled(
-    Array.from({ length: VARIATIONS }, () =>
-      generateImage({ prompt, images, seed: Math.floor(Math.random() * 1_000_000) }),
+    Array.from({ length: mode === "cheap" ? 1 : VARIATIONS }, () =>
+      generateImage({ prompt, images, seed: Math.floor(Math.random() * 1_000_000), size: mode === "cheap" ? 512 : 768 }),
     ),
   );
 
