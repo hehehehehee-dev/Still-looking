@@ -313,6 +313,20 @@ Still Looking. Newest entries at the bottom of each day.
   OK or BLOCKED. More reliable than the dashboard.
 - **Lesson for the demo:** don't run heavy tests in the 24 hours before recording or judging.
 
+### My idea: describe *this* child, not children in general
+- The prompt tells every child the same thing: "longer, narrower face, stronger jaw, thicker
+  eyebrows…". **My hypothesis:** identical generic wording pushes every face toward the same
+  template, which may be part of the "stock-photo face" problem.
+- Better: describe the person's own **stable** features (eye shape and spacing, eyelids, brow
+  shape, ear shape, hairline, lips, chin) plus marks (moles, scars, birthmarks), and let the model
+  age everything else naturally.
+- **Careful, from what we learned:** keep the life-stage age anchor ("the age of a university
+  student"), because dropping all age wording made faces look too young in v1. And avoid
+  features that change a lot in childhood (baby fat, overall nose or jaw size).
+- **Test (5 dev people, same seed):** A = current prompt · E = age anchor only, generic wording
+  removed · D = E + this person's own features (read by the vision model). Comparing E with A
+  shows the effect of removing generic words; D with E shows the effect of personal features.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
