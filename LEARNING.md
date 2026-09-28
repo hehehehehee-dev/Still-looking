@@ -428,6 +428,21 @@ Still Looking. Newest entries at the bottom of each day.
 - Costs money (~$0.067 per image on Replicate) and privacy terms are less explicit than Cloudflare's.
   Whether to use it in the app is a product decision (cost, privacy, reliability), not only an accuracy one.
 
+### Decision: the app now uses Nano Banana 2, with the free model as backup
+- Chosen because it's the only approach that measurably beat our first model (whole 95% range above zero).
+  By age gap it helps most where it matters: over 10 years it picked out the right person 43% of
+  the time vs 14% for the free model (one image each vs three, so a rough comparison).
+- **Trade-offs I accepted:** it costs ~$0.20 per run of 3 images (the app falls back to the free
+  model when credit runs out, so it never breaks), and photos now go to Replicate (which runs Google's model).
+  The app deletes the uploads from Replicate right after, and Replicate deletes request data within an
+  hour. The privacy text on every page was rewritten to say exactly this, instead of "processed in memory".
+- **How it works in code:** the server uploads the photos to Replicate, starts 3 predictions one after
+  another (low-credit accounts may start ~1 every 10 seconds), waits for all of them, deletes the uploads,
+  and asks the free model for any image that failed. Each image is labelled with the model that made it,
+  and the confidence note quotes that model's own test numbers.
+- Tested: 3 Nano Banana 2 images through the app's API in ~36 s. A bad token makes the Replicate step
+  fail cleanly (HTTP 401), which triggers the free backup.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

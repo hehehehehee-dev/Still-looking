@@ -135,8 +135,10 @@ export default function CreateFlow() {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="rounded-xl border border-accent/30 bg-accent-soft px-4 py-3 text-sm">
-        <strong>Your photos are never saved.</strong> They are shrunk on your device, used once to create
-        the images, and discarded. Nothing is stored on our side.
+        <strong>We never save your photos.</strong> They are shrunk on your device and sent only to the AI
+        service that makes the images: Replicate (running Google&apos;s Nano Banana 2), or Cloudflare as a backup.
+        We delete them from Replicate as soon as the images are made, and Replicate removes all request data
+        within an hour. Nothing is kept on our side.
       </div>
 
       {/* Step 1: the child */}

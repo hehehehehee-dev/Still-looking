@@ -22,6 +22,7 @@ type Experiment = {
   pairs: number;
   single_photo_mean: number;
   multi_photo_mean: number;
+  baseline_mean?: number;
   improvement_mean: number;
   improvement_ci95: [number, number];
   multi_better_pct: number;
@@ -39,6 +40,7 @@ const s = summary as unknown as {
   multi_photo?: Experiment;
   distinguishing_features?: Experiment;
   sam_editing_model?: Experiment;
+  nano_banana_2?: Experiment;
 };
 
 const beatCount = Math.round((s.overall.beat_baseline_pct / 100) * s.overall.pairs);
@@ -102,9 +104,22 @@ export default function AccuracyPage() {
         <div className="rounded-xl border border-accent/30 bg-accent-soft p-5 leading-relaxed">
           <strong>The short answer.</strong> Our aged images look older and keep some of the child&apos;s features,
           but in our test a face-recognition model matched the <em>original</em> childhood photo to the grown-up
-          person better than our aged images, every time. Use the images to picture how a child may have grown,
+          person better than any aged image. Use the images to picture how a child may have grown,
           and <strong>always share the original photo too</strong>.
         </div>
+        {s.nano_banana_2 && (
+          <div className="rounded-xl border border-border bg-surface p-5 text-sm leading-relaxed">
+            <strong>Which model the app uses, and why.</strong> We tested seven approaches on the same people. The
+            app now uses <strong>Google&apos;s Nano Banana 2</strong> (via Replicate), the only one that measurably
+            beat our first, free model: similarity to the real later photo{" "}
+            {s.nano_banana_2.single_photo_mean.toFixed(2)} → <strong>{s.nano_banana_2.multi_photo_mean.toFixed(2)}</strong>{" "}
+            (95% range of the change {signed(s.nano_banana_2.improvement_ci95[0])} to {signed(s.nano_banana_2.improvement_ci95[1])}),
+            and it keeps the requested age and sex more reliably. It is still well below the original photo
+            ({(s.nano_banana_2.baseline_mean ?? s.overall.baseline_mean).toFixed(2)}). If it is unavailable, the app falls back to the free model.
+            The detailed results below are for the free model (3 images per person); Nano Banana 2 is in
+            &ldquo;Can it be improved?&rdquo;.
+          </div>
+        )}
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
@@ -177,6 +192,8 @@ export default function AccuracyPage() {
             what="Up to 2 extra childhood photos, taken at the same age or younger, added next to the main photo." />
           <ExperimentResult title="Distinguishing features" exp={s.distinguishing_features}
             what="An AI model listed visible lasting marks (moles, scars, eye colour) that were added to the instructions. In the app, families check this list first; in this test nobody did, so it is the worst case." />
+          <ExperimentResult title="Nano Banana 2 instead (now used by the app)" exp={s.nano_banana_2}
+            what="A newer image model from Google, given exactly the same instructions and photo as our free model. It is paid (about $0.07 per image) and has no random seed, so each run differs." />
           <ExperimentResult title="An editing model instead (SAM)" exp={s.sam_editing_model}
             what="Our model redraws a new face. SAM, a research face-aging model, edits the existing face instead and is trained to keep identity. It takes one photo only (no family photos or instructions)." />
         </div>

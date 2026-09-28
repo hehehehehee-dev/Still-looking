@@ -122,6 +122,29 @@ def compare_arm(rows, key, only_ids=None):
     }
 
 
+def single_model_by_bucket(rows, key):
+    """Per age-gap group stats for a model we ran once per person (e.g. Nano Banana 2), so the app's
+    confidence note can quote the numbers of the model it actually uses."""
+    olds = np.stack([r["_old"] for r in rows])
+    out = {}
+    for b, label in BUCKETS.items():
+        idx = [i for i, r in enumerate(rows) if r["bucket"] == b and r[key] is not None]
+        if not idx:
+            continue
+        def top1(emb, i):
+            scores = olds @ emb
+            return int((scores > scores[i]).sum()) == 0
+        out[b] = {
+            "label": label,
+            "pairs": len(idx),
+            "aged_mean": round(float(np.mean([cos(rows[i][key], rows[i]["_old"]) for i in idx])), 3),
+            "baseline_mean": round(float(np.mean([rows[i]["baseline"] for i in idx])), 3),
+            "aged_top1_pct": round(100 * np.mean([top1(rows[i][key], i) for i in idx])),
+            "baseline_top1_pct": round(100 * np.mean([top1(rows[i]["_young"], i) for i in idx])),
+        }
+    return out
+
+
 def summarise(rows):
     diffs = [r["aged_mean"] - r["baseline"] for r in rows]
     return {
@@ -276,6 +299,7 @@ def main() -> None:
         features_arm["people_with_no_features_found"] = len(suggested) - len(with_features)
     sam_arm = compare_arm(rows, "_sam")  # editing model (SAM) vs our redrawing model, variation 0
     nb2_arm = compare_arm(rows, "_nb2")  # Nano Banana 2 with the app's prompt vs FLUX, variation 0
+    nb2_buckets = single_model_by_bucket(rows, "_nb2")
     for r in rows:
         for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features", "_sam", "_nb2"):
             del r[k]
@@ -303,6 +327,7 @@ def main() -> None:
         "distinguishing_features": features_arm,
         "sam_editing_model": sam_arm,
         "nano_banana_2": nb2_arm,
+        "nano_banana_2_by_bucket": nb2_buckets,
         "buckets": {k: {"label": BUCKETS[k], **summarise([r for r in rows if r["bucket"] == k])}
                     for k in BUCKETS if any(r["bucket"] == k for r in rows)},
     }

@@ -33,21 +33,23 @@ picture a missing child today, to bring to the police or a missing-children orga
 | Inputs | One photo | Child photo + optional family photos + family-confirmed distinguishing marks |
 | Output | One confident image | 3 variations + a confidence note from real test results |
 | Accuracy | Not published | [Measured on a public dataset](#accuracy-results), including where it fails |
-| Privacy | Uploads often stored | No accounts, no database, no storage; photos only exist in memory during the request |
+| Privacy | Uploads often stored | No accounts, no database, no storage; photos go only to the image model and are deleted right after |
 
 ## How it works
 
 ```
-Browser                                   Server (Next.js API route)            Cloudflare Workers AI
-───────                                   ──────────────────────────            ─────────────────────
-choose photos ─► shrink to ≤500px ─►  /api/generate: check inputs,  ─► FLUX.2 [klein] 4B image model
-(originals never leave the device)        compute ages, build prompt    ◄─ 3 variations (3 random seeds)
-                                    ◄──  return images (nothing saved)
-show 3 variations + confidence note
+Browser                                Server (Next.js API route)           Image models
+───────                                ──────────────────────────           ────────────
+frame the face, shrink ─►  /api/generate: check inputs,       ─► 1st: Nano Banana 2 (Google, via Replicate)
+to ≤500px (originals          compute ages, build prompt            3 images; uploads deleted right after
+never leave the device)                                        ─► backup: FLUX.2 [klein] 4B (Cloudflare, free)
+                                                                   for any image the first model couldn't make
+                         ◄──  return images + which model made each (nothing saved)
+show 3 variations + confidence note for that model
 (images live only in page memory; closing the page deletes them)
 
-optional: "Suggest from the photo" ─►  /api/features  ─────────────► Gemma 4 vision model suggests
-the family edits the list before use                                  moles, scars, eye colour…
+optional: "Suggest from the photo" ─► /api/features ─► Gemma 4 vision model (Cloudflare) suggests
+the family edits the list before use                    moles, scars, eye colour…
 ```
 
 - **Age math:** age in photo = photo date − date of birth; target age = today − date of birth.
@@ -61,7 +63,11 @@ the family edits the list before use                                  moles, sca
 ### Tech stack
 
 - **Next.js 16** (App Router, TypeScript, Tailwind CSS), deployable on Vercel's free tier
-- **Cloudflare Workers AI** (free plan): `@cf/black-forest-labs/flux-2-klein-4b` for images,
+- **Replicate** (paid, ~$0.067 per image): `google/nano-banana-2`, the main image model, chosen because it
+  measurably kept identity best in our eval. Photos are uploaded to Replicate's file store only for the request
+  and deleted by the app straight after; Replicate deletes API request data after an hour
+  ([data retention](https://replicate.com/docs/topics/predictions/data-retention)).
+- **Cloudflare Workers AI** (free plan): `@cf/black-forest-labs/flux-2-klein-4b` as the backup image model and
   `@cf/google/gemma-4-26b-a4b-it` for feature suggestions. Cloudflare states it does not store or train on
   inputs/outputs ([data usage policy](https://developers.cloudflare.com/workers-ai/platform/data-usage/)).
 - **Evaluation:** Python, InsightFace (ArcFace face recognition), matplotlib
@@ -74,6 +80,7 @@ the family edits the list before use                                  moles, sca
 
 - Node.js **24** or newer
 - A free Cloudflare account (no credit card needed)
+- Optional: a Replicate account with a little credit for the main model; without it the app uses the free model
 
 ### Run the app locally
 
@@ -81,7 +88,7 @@ the family edits the list before use                                  moles, sca
 git clone <this-repo-url>
 cd still-looking
 npm install
-cp .env.example .env.local      # then fill in the two values below
+cp .env.example .env.local      # then fill in the values below
 npm run dev                     # open http://localhost:3000
 ```
 
@@ -91,6 +98,8 @@ npm run dev                     # open http://localhost:3000
 |---|---|
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → AI → Workers AI → "Use REST API" |
 | `CLOUDFLARE_API_TOKEN` | Same page → "Create a Workers AI API Token" (default permissions are fine) |
+| `REPLICATE_API_TOKEN` | Optional. replicate.com → Account → API tokens. Enables Nano Banana 2; leave empty for free-only |
+| `AI_MODE` | Optional, development only: `mock` (no AI calls) or `cheap` (1 free image at 512px). Leave empty when deployed |
 
 Never commit `.env.local`; it is git-ignored.
 
@@ -117,13 +126,18 @@ longer than the documented 00:00 UTC to come back.
 By age gap (right person ranked first, original photo / aged image): under 5 years 93% / 57% ·
 5–10 years 100% / 64% · over 10 years 64% / **14%**. Full table: [`eval/outputs/results_table.md`](eval/outputs/results_table.md).
 
-**Can more information help?** (same photo, same seed, only one thing changed)
+**The app's main model now is Nano Banana 2** (see the experiments below): one image per person, right person
+ranked first 43% (under 5 years) · 57% (5–10) · **43% (over 10, vs 14% for the free model)**, while the original
+photo scores 93% · 100% · 64%. It helps most for the long gaps this app is for, but never beats the original photo.
+
+**Can it be improved?** (same photo, only one thing changed)
 
 | Experiment | People | Similarity: normal → with it | 95% range of the change | Verdict |
 |---|---|---|---|---|
 | Up to 2 extra childhood photos | 31 | 0.187 → 0.169 | −0.044 to +0.007 | No measurable help |
 | AI-suggested features (unchecked by a family) | 18* | 0.168 → 0.167 | −0.031 to +0.022 | No measurable help |
 | An *editing* model (SAM) instead of our *redrawing* model | 38† | 0.172 → 0.204 | −0.003 to +0.066 | Slightly better identity, not yet conclusive; ages faces too little |
+| **Nano Banana 2 instead of FLUX** (now the app's main model) | 42 | 0.173 → **0.208** | **+0.003 to +0.070** | **Measurable improvement**; right age and sex more often |
 
 \*The free quota ran out partway; 7 more people had no clear features to add. On old, blurry scans the vision model
 mostly found only "dark eyes" or "thick eyebrows", so this is a weak test of the idea: real families can add marks
@@ -182,7 +196,9 @@ npm run eval:all                                           # generate (uses free
 ## Safety and privacy by design
 
 - No login, no database, no image storage, no gallery, no sharing features.
-- Photos are shrunk in the browser; only the small copy is sent, processed in memory, and discarded.
+- Photos are framed and shrunk in the browser; only the small copy is sent, to the image model only.
+  The app deletes it from Replicate as soon as the images are made (Replicate also deletes request data
+  within an hour); Cloudflare states it keeps nothing.
 - Results stay in the page's memory; refreshing or closing the page deletes them.
 - The app does not search for, match or identify anyone. It only creates images for the uploader.
 - Every page states: *this is an estimate, not identification*, and points to the police and NCMEC
@@ -201,7 +217,7 @@ This project was built with significant help from **Claude Code (Anthropic)**, a
 - **I tested** the app myself and caught problems (for example, results that still looked like children).
 - The decisions, problems and what I learned are logged day by day in [LEARNING.md](LEARNING.md).
 
-AI models used **inside** the product: FLUX.2 [klein] 4B (image generation), Gemma 4 (feature
+AI models used **inside** the product: Nano Banana 2 (main image model), FLUX.2 [klein] 4B (backup image model), Gemma 4 (feature
 suggestions), InsightFace buffalo_l (evaluation only; non-commercial research licence).
 
 ## Acknowledgements

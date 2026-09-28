@@ -1,5 +1,5 @@
-// The confidence note shown with results. It is NOT a per-image score (the model gives none).
-// It reports how the same pipeline did in our offline test (see /eval and the Accuracy page)
+// The confidence note shown with results. It is NOT a per-image score (the models give none).
+// It reports how the same model did in our offline test (see /eval and the Accuracy page)
 // for a similar age gap. Numbers come straight from the eval's summary file.
 
 import summary from "@/data/eval-summary.json";
@@ -11,10 +11,13 @@ type BucketStats = {
   pairs: number;
   aged_top1_pct: number;
   baseline_top1_pct: number;
-  aged_closer_than_strangers_pct: number;
 };
-const buckets = summary.buckets as unknown as Partial<Record<GapBucket, BucketStats>>;
-const totalPeople = summary.pairs_scored;
+type Summary = {
+  pairs_scored: number;
+  buckets: Partial<Record<GapBucket, BucketStats>>;
+  nano_banana_2_by_bucket?: Partial<Record<GapBucket, BucketStats>>;
+};
+const s = summary as unknown as Summary;
 
 export function bucketFor(gapYears: number): GapBucket {
   if (gapYears < 5) return "under5";
@@ -22,13 +25,14 @@ export function bucketFor(gapYears: number): GapBucket {
   return "over10";
 }
 
-export function confidenceNote(gapYears: number, familyCount: number, featureCount = 0): string[] {
-  const b = buckets[bucketFor(gapYears)];
+export function confidenceNote(gapYears: number, familyCount: number, featureCount = 0, usedNb2 = false): string[] {
+  const bucket = bucketFor(gapYears);
+  const b = (usedNb2 ? s.nano_banana_2_by_bucket?.[bucket] : undefined) ?? s.buckets[bucket];
   const notes: string[] = [];
   if (b) {
     notes.push(
       `In our test on ${b.pairs} real people with an age gap of ${b.label.toLowerCase()}, a face-recognition model ` +
-        `picked out the right person (among ${totalPeople}) from the aged image ${b.aged_top1_pct}% of the time, ` +
+        `picked out the right person (among ${s.pairs_scored}) from an aged image ${b.aged_top1_pct}% of the time, ` +
         `and from the original childhood photo ${b.baseline_top1_pct}% of the time.`,
       "So these images can help you picture how a child may have grown, but they are not a better match than " +
         "the original photo. Always share the original photo as well.",
