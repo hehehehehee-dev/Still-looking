@@ -394,6 +394,40 @@ Still Looking. Newest entries at the bottom of each day.
   compensate. Also try two modern editing models that are built to keep identity and accept
   several photos (Qwen-Image-Edit, Nano Banana 2). All on the 5 dev people first.
 
+### Round 2 on the 5 dev people: SAM with an older target, and two modern editing models
+| Version | Similarity to real later photo | To own child photo | What the images look like |
+|---|---|---|---|
+| Baseline (unchanged photo) | 0.37 | – | – |
+| A: our FLUX prompt | 0.13 | 0.37 | right age, "stock" faces |
+| SAM (target age) | 0.19 | 0.43 | keeps the face but barely ages it; a baby photo came out as a ghostly smear |
+| SAM +5 years | 0.21 | 0.42 | almost the same as SAM: asking for older didn't really age it more |
+| SAM +10 years | 0.19 | 0.40 | same |
+| Qwen-Image-Edit-2511 | **0.04** | 0.06 | a completely different "model" face: worst of all |
+| **Nano Banana 2** | **0.16** | 0.30 | **the only one that looks the right age and still like the child**; the 0 → 8 baby finally became an ~8-year-old |
+- Lesson: "editing model" isn't one thing. Qwen, sold as identity-preserving, lost the identity completely
+  on these old photos, while Nano Banana 2 balanced age and identity best.
+- Decision: run Nano Banana 2 on all 42 test people with the app's exact prompt (~$2.80).
+
+### Found a flaw in my own eval: 7 of 42 sex labels were wrong
+- FG-NET has no sex labels, so the eval used InsightFace to *guess* sex from each later photo.
+  Looking at all 42 photos myself, 7 were clearly wrong (6 boys labelled "girl", 1 woman labelled "boy").
+- So about 1 in 6 prompts told the model the wrong sex. That hurts a model that *listens* to the
+  prompt (Nano Banana 2 made girls) more than one that ignores it (FLUX mostly did).
+- **Fix:** corrected the 7 labels by hand (marked `sex_checked=fixed` in `eval/pairs.csv`; unclear
+  faces were left as they were), re-made those people's FLUX and Nano Banana 2 images, and left
+  them out of the two older experiments whose extra images used the old label.
+- **Lesson:** an automatic label is a guess too. Check a sample of labels by eye before trusting them.
+
+### Result: Nano Banana 2 is the first thing that measurably beats our FLUX setup (all 42 people)
+- Identity: **0.208 vs 0.173** for FLUX (same people, first image), change **+0.035, 95% range
+  +0.003 to +0.070**. The whole range is above zero, so this is a real (if modest) improvement.
+  Right person ranked first: 48% vs 43%.
+- It also *looks* right more often: correct age (FLUX sometimes made an 18-year-old look 40), follows
+  the requested sex, and turned babies into children of the right age.
+- Still far from the original photo (0.42). The Age-ID trade-off is smaller, not gone.
+- Costs money (~$0.067 per image on Replicate) and privacy terms are less explicit than Cloudflare's.
+  Whether to use it in the app is a product decision (cost, privacy, reliability), not only an accuracy one.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

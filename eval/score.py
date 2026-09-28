@@ -34,6 +34,7 @@ GENERATED = OUT / "images"
 GENERATED_MULTI = OUT / "images_multi"
 GENERATED_FEATURES = OUT / "images_features"
 GENERATED_SAM = OUT / "images_sam"
+GENERATED_NB2 = OUT / "images_nb2"
 VARIATIONS = 3
 BUCKETS = {"under5": "Under 5 years", "5to10": "5 to 10 years", "over10": "Over 10 years"}
 
@@ -258,19 +259,25 @@ def main() -> None:
             "_multi": analyse(app, GENERATED_MULTI / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_MULTI / f"{p['pair_id']}_v0.jpg").exists() else None,
             "_features": analyse(app, GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg").exists() else None,
             "_sam": analyse(app, GENERATED_SAM / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_SAM / f"{p['pair_id']}_v0.jpg").exists() else None,
+            "_nb2": analyse(app, GENERATED_NB2 / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_NB2 / f"{p['pair_id']}_v0.jpg").exists() else None,
         })
 
     add_stranger_and_rank_scores(rows)
-    multi_photo = compare_arm(rows, "_multi")
+    # 7 sex labels were corrected by hand after these two experiments were generated; their extra
+    # images still used the old label, so leave those people out of these two comparisons
+    fixed = {p["pair_id"] for p in pairs if p.get("sex_checked") == "fixed"}
+    unchanged = {r["pair_id"] for r in rows} - fixed
+    multi_photo = compare_arm(rows, "_multi", unchanged)
     features_file = OUT / "features.json"
     suggested = json.loads(features_file.read_text()) if features_file.exists() else {}
-    with_features = {pid for pid, f in suggested.items() if f}  # only people who got at least one feature
+    with_features = {pid for pid, f in suggested.items() if f and pid not in fixed}  # people who got at least one feature
     features_arm = compare_arm(rows, "_features", with_features)
     if features_arm:
         features_arm["people_with_no_features_found"] = len(suggested) - len(with_features)
     sam_arm = compare_arm(rows, "_sam")  # editing model (SAM) vs our redrawing model, variation 0
+    nb2_arm = compare_arm(rows, "_nb2")  # Nano Banana 2 with the app's prompt vs FLUX, variation 0
     for r in rows:
-        for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features", "_sam"):
+        for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features", "_sam", "_nb2"):
             del r[k]
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -295,6 +302,7 @@ def main() -> None:
         "multi_photo": multi_photo,
         "distinguishing_features": features_arm,
         "sam_editing_model": sam_arm,
+        "nano_banana_2": nb2_arm,
         "buckets": {k: {"label": BUCKETS[k], **summarise([r for r in rows if r["bucket"] == k])}
                     for k in BUCKETS if any(r["bucket"] == k for r in rows)},
     }
@@ -318,7 +326,7 @@ def main() -> None:
 
     print("\n".join(lines))
     for name, m in (("More photos of the child", multi_photo), ("AI-suggested features, unchecked", features_arm),
-                    ("SAM editing model instead of FLUX", sam_arm)):
+                    ("SAM editing model instead of FLUX", sam_arm), ("Nano Banana 2 instead of FLUX", nb2_arm)):
         if m:
             print(f"\n{name} ({m['pairs']} people): similarity {m['single_photo_mean']} normal -> "
                   f"{m['multi_photo_mean']} with it (change {m['improvement_mean']:+}, 95% range {m['improvement_ci95']}); "

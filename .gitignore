@@ -55,3 +55,4 @@ next-env.d.ts
 /eval/outputs/images_multi/
 /eval/outputs/images_features/
 /eval/outputs/images_sam/
+/eval/outputs/images_nb2/
