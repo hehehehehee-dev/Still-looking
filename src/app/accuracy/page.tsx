@@ -38,6 +38,7 @@ const s = summary as unknown as {
   buckets: Record<string, Stats>;
   multi_photo?: Experiment;
   distinguishing_features?: Experiment;
+  sam_editing_model?: Experiment;
 };
 
 const beatCount = Math.round((s.overall.beat_baseline_pct / 100) * s.overall.pairs);
@@ -167,15 +168,17 @@ export default function AccuracyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-2xl font-semibold">Can more information help?</h2>
+        <h2 className="text-2xl font-semibold">Can it be improved?</h2>
         <p className="leading-relaxed text-muted">
-          Two experiments on the same people, each changing only one thing (same photo, same random seed).
+          Experiments on the same people, each changing only one thing and compared with our normal result.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <ExperimentResult title="More photos of the child" exp={s.multi_photo}
             what="Up to 2 extra childhood photos, taken at the same age or younger, added next to the main photo." />
           <ExperimentResult title="Distinguishing features" exp={s.distinguishing_features}
             what="An AI model listed visible lasting marks (moles, scars, eye colour) that were added to the instructions. In the app, families check this list first; in this test nobody did, so it is the worst case." />
+          <ExperimentResult title="An editing model instead (SAM)" exp={s.sam_editing_model}
+            what="Our model redraws a new face. SAM, a research face-aging model, edits the existing face instead and is trained to keep identity. It takes one photo only (no family photos or instructions)." />
         </div>
       </section>
 

@@ -123,10 +123,12 @@ By age gap (right person ranked first, original photo / aged image): under 5 yea
 |---|---|---|---|---|
 | Up to 2 extra childhood photos | 31 | 0.187 → 0.169 | −0.044 to +0.007 | No measurable help |
 | AI-suggested features (unchecked by a family) | 18* | 0.168 → 0.167 | −0.031 to +0.022 | No measurable help |
+| An *editing* model (SAM) instead of our *redrawing* model | 38† | 0.172 → 0.204 | −0.003 to +0.066 | Slightly better identity, not yet conclusive; ages faces too little |
 
 \*The free quota ran out partway; 7 more people had no clear features to add. On old, blurry scans the vision model
 mostly found only "dark eyes" or "thick eyebrows", so this is a weak test of the idea: real families can add marks
 (scars, birthmarks) a photo can't show.
+†SAM ([Alaluf et al., 2021](https://github.com/yuval-alaluf/SAM), run via Replicate) could not find a face in 4 of the 42 old photos.
 
 **In plain words:** the aged images keep part of the child's identity (far above chance), but a
 face-recognition model matched the **original** childhood photo to the grown-up person better than our

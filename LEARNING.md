@@ -381,6 +381,19 @@ Still Looking. Newest entries at the bottom of each day.
 - Can SAM run on Vercel itself? No: it needs a GPU and PyTorch. Vercel can only *call* it
   through Replicate's API, the same way we call Cloudflare today.
 
+### Result: the editing model SAM on all 42 test people
+- **Identity:** SAM 0.204 vs our FLUX 0.172 (same people, first variation), better for 66% of people.
+  The 95% range is −0.003 to +0.066: *almost* clearly better, but it just touches zero, so I
+  can't honestly call it a win yet. Right person ranked first: 47% vs 45%. Still 0 people beat the original photo.
+- **Looking at the images:** SAM keeps the face, pose and even the old-photo look, but it **ages too
+  little** (an 8 → 18 girl looked about 10) and the images are soft or blurry.
+- **Robustness:** SAM refused 4 of 42 old scans ("could not find face"). FLUX never refused.
+- **Money:** about $0.16 on Replicate. A token stopped working halfway (401 "invalid token", not a
+  credit or rate-limit problem); a new token fixed it, and the run resumed without redoing images.
+- **Next idea:** since SAM under-ages, ask it for an *older* target (+5 or +10 years) to
+  compensate. Also try two modern editing models that are built to keep identity and accept
+  several photos (Qwen-Image-Edit, Nano Banana 2). All on the 5 dev people first.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

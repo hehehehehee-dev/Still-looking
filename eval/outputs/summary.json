@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-26",
+  "date": "2026-09-28",
   "dataset": "FG-NET",
   "model": "FLUX.2 [klein] 4B on Cloudflare Workers AI",
   "face_model": "InsightFace buffalo_l (ArcFace similarity, age estimate)",
@@ -62,6 +62,21 @@
     "single_top1_pct": 50,
     "multi_top1_pct": 50,
     "people_with_no_features_found": 7
+  },
+  "sam_editing_model": {
+    "pairs": 38,
+    "single_photo_mean": 0.172,
+    "multi_photo_mean": 0.204,
+    "baseline_mean": 0.412,
+    "improvement_mean": 0.032,
+    "improvement_ci95": [
+      -0.003,
+      0.066
+    ],
+    "multi_better_pct": 66,
+    "multi_beat_baseline_pct": 0,
+    "single_top1_pct": 45,
+    "multi_top1_pct": 47
   },
   "buckets": {
     "under5": {

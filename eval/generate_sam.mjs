@@ -36,8 +36,9 @@ if (!model.ok) {
 const version = model.body.latest_version;
 const inputs = version.openapi_schema.components.schemas.Input.properties;
 console.log("SAM inputs:", Object.entries(inputs).map(([k, v]) => `${k} (${v.type ?? "enum"}, default ${JSON.stringify(v.default)})`).join(", "));
-const imageField = Object.keys(inputs).find((k) => /image/i.test(k));
-const ageField = Object.keys(inputs).find((k) => /age/i.test(k));
+// careful: "image" also contains the letters "age", so match the age field exactly first
+const imageField = Object.keys(inputs).find((k) => /^(image|input_image|img)$/i.test(k)) ?? Object.keys(inputs).find((k) => /image/i.test(k));
+const ageField = Object.keys(inputs).find((k) => /^target_age$/i.test(k)) ?? Object.keys(inputs).find((k) => k !== imageField && /age/i.test(k));
 if (!imageField || !ageField) {
   console.error("Unexpected inputs; stopping so nothing is wasted.");
   process.exit(1);
@@ -55,17 +56,32 @@ for (const pair of pairs) {
   const photo = fs.readFileSync(path.join(ROOT, "data", "FGNET", "images", pair.young_file));
   const ageValue = inputs[ageField].type === "integer" ? Number(pair.old_age) : String(pair.old_age);
 
+  // SAM wants an image URL, so upload the photo to Replicate's file storage first
+  // (deleted again right after this prediction)
+  const form = new FormData();
+  form.append("content", new Blob([photo], { type: "image/jpeg" }), pair.young_file);
+  const upload = await fetch("https://api.replicate.com/v1/files", {
+    method: "POST", headers: { Authorization: `Bearer ${TOKEN}` }, body: form,
+  }).then((r) => r.json());
+  if (!upload?.urls?.get) {
+    console.error(`${pair.pair_id} upload failed:`, JSON.stringify(upload).slice(0, 300));
+    break;
+  }
+
   const started = Date.now();
   let pred = await api("/predictions", {
     method: "POST",
     headers: { Prefer: "wait=60" },
-    body: JSON.stringify({ version: version.id, input: { [imageField]: `data:image/jpeg;base64,${photo.toString("base64")}`, [ageField]: ageValue } }),
+    body: JSON.stringify({ version: version.id, input: { [imageField]: upload.urls.get, [ageField]: ageValue } }),
   });
   // poll until finished if it didn't finish within the wait
   while (pred.ok && ["starting", "processing"].includes(pred.body?.status)) {
     await new Promise((r) => setTimeout(r, 2000));
     pred = await api(`/predictions/${pred.body.id}`);
   }
+  await api(`/files/${upload.id}`, { method: "DELETE" }); // don't leave the photo on Replicate
+  // accounts with under $5 credit may start 1 prediction at a time, 6 per minute
+  await new Promise((r) => setTimeout(r, 11_000));
   if (!pred.ok || pred.body?.status !== "succeeded") {
     console.error(`${pair.pair_id} failed:`, pred.status, pred.body?.error ?? pred.body?.detail ?? JSON.stringify(pred.body).slice(0, 300));
     if (pred.status === 402 || /credit|billing|payment/i.test(JSON.stringify(pred.body))) break;
