@@ -303,6 +303,146 @@ Still Looking. Newest entries at the bottom of each day.
   aged image *and* the original, and ask it to restore the original's features while keeping the
   age). Test on the 5 dev people first. Skipped FRAN and ChildGAN's dataset for time; they're future work.
 
+### Confirmed: the free limit is a rolling 24 hours, not "per day"
+- The dashboard's "Neurons used today: 0/10k" only counts since 00:00 UTC. The **"Last 24 hours"**
+  chart showed ~11k neurons used (10.2k images + 0.8k vision), and the API stays blocked until
+  that usage is more than 24 hours old.
+- Also spotted there: the vision model had used 809 neurons, mostly from the "thinking" bug
+  (now fixed, ~25 per call).
+- Added `npm run quota`: asks the API directly for a 1-token reply (~0.05 neurons) and prints
+  OK or BLOCKED. More reliable than the dashboard.
+- **Lesson for the demo:** don't run heavy tests in the 24 hours before recording or judging.
+
+### My idea: describe *this* child, not children in general
+- The prompt tells every child the same thing: "longer, narrower face, stronger jaw, thicker
+  eyebrows…". **My hypothesis:** identical generic wording pushes every face toward the same
+  template, which may be part of the "stock-photo face" problem.
+- Better: describe the person's own **stable** features (eye shape and spacing, eyelids, brow
+  shape, ear shape, hairline, lips, chin) plus marks (moles, scars, birthmarks), and let the model
+  age everything else naturally.
+- **Careful, from what we learned:** keep the life-stage age anchor ("the age of a university
+  student"), because dropping all age wording made faces look too young in v1. And avoid
+  features that change a lot in childhood (baby fat, overall nose or jaw size).
+- **Test (5 dev people, same seed):** A = current prompt · E = age anchor only, generic wording
+  removed · D = E + this person's own features (read by the vision model). Comparing E with A
+  shows the effect of removing generic words; D with E shows the effect of personal features.
+
+### Result: neither my wording idea nor the two-pass idea helped (5 dev people)
+| Version | Similarity to real later photo | To own child photo |
+|---|---|---|
+| Baseline (unchanged photo) | 0.37 | – |
+| A: current prompt | 0.13 | 0.37 |
+| E: generic face wording removed | 0.13 | 0.38 |
+| D: + this person's own features (my idea) | 0.11 | 0.35 |
+| P2a / P2b: two passes | 0.13 / 0.12 | 0.36 / 0.35 |
+- All within ±0.02 of each other; with only 5 people that's noise, so **no version is better**.
+- **Looking at the images says the same:** for each person, all five versions look almost alike.
+  The result is decided mostly by the input photo and the model, and the wording barely matters.
+  That confirms "it's mostly the model, not the prompt".
+- **Two failures every version shared, which the prompt couldn't fix:**
+  - A girl (person 049) came out as a **boy in all versions**, even though the prompt said "teenage girl".
+  - A baby aged 0 → 8 stayed a **toddler wearing the same bib** in all versions.
+- The vision model described each child sensibly ("almond-shaped eyes, wide eye spacing, arched
+  eyebrows", and it spotted "a small mole on the lower right cheek"), but the image model didn't use
+  that information in a measurable way.
+- **Decision:** stop tuning the prompt; keep A in the app. It was a fair test of a reasonable
+  idea, the answer was "no", and that's worth knowing. Keeping family-confirmed marks in the app
+  costs nothing, but I won't claim they improve accuracy.
+
+### Tried a bigger model: FLUX.2 klein 9B (5 dev people, same prompt and seed)
+| Model | Similarity to real later photo | To own child photo |
+|---|---|---|
+| Baseline (unchanged photo) | 0.37 | – |
+| 4B (the app's model) | 0.13 | 0.37 |
+| **9B (bigger)** | **0.10** | **0.22** |
+- **Better at following instructions:** the girl who came out as a boy with every 4B prompt is
+  finally a girl with 9B, and black-and-white photos are turned into natural colour.
+- **Worse at keeping the person:** 9B's faces are even cleaner and more "idealised", and less
+  like the child they came from (0.22 vs 0.37). It's the Age-ID trade-off again: a stronger model
+  follows the prompt ("an 18-year-old…") more and the photo less.
+- **Still failed the same hard case:** the baby aged 0 → 8 is still a toddler in a bib.
+- **Cost:** ~1,400 neurons per image vs ~73, about 20× more; only ~7 free images a day.
+- **Decision:** keep 4B in the app. "Bigger" isn't automatically "better" for this task; the
+  right next step would be a model built to *edit* faces while keeping identity, not a bigger
+  general image model.
+
+### Reconsidering "edit" vs "redraw" (my question: why didn't we edit the existing face?)
+- Apps like FaceApp or gender-swap filters **edit** a face: they move it in a face model's
+  "latent space" toward "older" or "female" and keep pose, light and most pixels. Our model **redraws**
+  a new picture from the photo plus instructions. Also, those apps are never scored against a real
+  answer, and child → adult (bones grow) is much harder than adult → old (wrinkles, grey hair).
+- **Why we didn't pick an editing model at the start:** the pitch was family-guided, and the
+  editing model SAM takes only one photo (no family photos). Then the $0 choice led to Cloudflare,
+  which has no face-editing model. SAM was planned as a comparison, but was dropped when we switched.
+- **What changed:** the eval showed family guidance can't be measured and redrawing loses
+  identity, so the main reason to skip editing is weaker now. Changing course when data says so
+  is fine, but editing isn't automatically better for children, so **measure first**: run SAM
+  (via Replicate, ~$0.004/image) on the same 42 people and score it the same way.
+- Can SAM run on Vercel itself? No: it needs a GPU and PyTorch. Vercel can only *call* it
+  through Replicate's API, the same way we call Cloudflare today.
+
+### Result: the editing model SAM on all 42 test people
+- **Identity:** SAM 0.204 vs our FLUX 0.172 (same people, first variation), better for 66% of people.
+  The 95% range is −0.003 to +0.066: *almost* clearly better, but it just touches zero, so I
+  can't honestly call it a win yet. Right person ranked first: 47% vs 45%. Still 0 people beat the original photo.
+- **Looking at the images:** SAM keeps the face, pose and even the old-photo look, but it **ages too
+  little** (an 8 → 18 girl looked about 10) and the images are soft or blurry.
+- **Robustness:** SAM refused 4 of 42 old scans ("could not find face"). FLUX never refused.
+- **Money:** about $0.16 on Replicate. A token stopped working halfway (401 "invalid token", not a
+  credit or rate-limit problem); a new token fixed it, and the run resumed without redoing images.
+- **Next idea:** since SAM under-ages, ask it for an *older* target (+5 or +10 years) to
+  compensate. Also try two modern editing models that are built to keep identity and accept
+  several photos (Qwen-Image-Edit, Nano Banana 2). All on the 5 dev people first.
+
+### Round 2 on the 5 dev people: SAM with an older target, and two modern editing models
+| Version | Similarity to real later photo | To own child photo | What the images look like |
+|---|---|---|---|
+| Baseline (unchanged photo) | 0.37 | – | – |
+| A: our FLUX prompt | 0.13 | 0.37 | right age, "stock" faces |
+| SAM (target age) | 0.19 | 0.43 | keeps the face but barely ages it; a baby photo came out as a ghostly smear |
+| SAM +5 years | 0.21 | 0.42 | almost the same as SAM: asking for older didn't really age it more |
+| SAM +10 years | 0.19 | 0.40 | same |
+| Qwen-Image-Edit-2511 | **0.04** | 0.06 | a completely different "model" face: worst of all |
+| **Nano Banana 2** | **0.16** | 0.30 | **the only one that looks the right age and still like the child**; the 0 → 8 baby finally became an ~8-year-old |
+- Lesson: "editing model" isn't one thing. Qwen, sold as identity-preserving, lost the identity completely
+  on these old photos, while Nano Banana 2 balanced age and identity best.
+- Decision: run Nano Banana 2 on all 42 test people with the app's exact prompt (~$2.80).
+
+### Found a flaw in my own eval: 7 of 42 sex labels were wrong
+- FG-NET has no sex labels, so the eval used InsightFace to *guess* sex from each later photo.
+  Looking at all 42 photos myself, 7 were clearly wrong (6 boys labelled "girl", 1 woman labelled "boy").
+- So about 1 in 6 prompts told the model the wrong sex. That hurts a model that *listens* to the
+  prompt (Nano Banana 2 made girls) more than one that ignores it (FLUX mostly did).
+- **Fix:** corrected the 7 labels by hand (marked `sex_checked=fixed` in `eval/pairs.csv`; unclear
+  faces were left as they were), re-made those people's FLUX and Nano Banana 2 images, and left
+  them out of the two older experiments whose extra images used the old label.
+- **Lesson:** an automatic label is a guess too. Check a sample of labels by eye before trusting them.
+
+### Result: Nano Banana 2 is the first thing that measurably beats our FLUX setup (all 42 people)
+- Identity: **0.208 vs 0.173** for FLUX (same people, first image), change **+0.035, 95% range
+  +0.003 to +0.070**. The whole range is above zero, so this is a real (if modest) improvement.
+  Right person ranked first: 48% vs 43%.
+- It also *looks* right more often: correct age (FLUX sometimes made an 18-year-old look 40), follows
+  the requested sex, and turned babies into children of the right age.
+- Still far from the original photo (0.42). The Age-ID trade-off is smaller, not gone.
+- Costs money (~$0.067 per image on Replicate) and privacy terms are less explicit than Cloudflare's.
+  Whether to use it in the app is a product decision (cost, privacy, reliability), not only an accuracy one.
+
+### Decision: the app now uses Nano Banana 2, with the free model as backup
+- Chosen because it's the only approach that measurably beat our first model (whole 95% range above zero).
+  By age gap it helps most where it matters: over 10 years it picked out the right person 43% of
+  the time vs 14% for the free model (one image each vs three, so a rough comparison).
+- **Trade-offs I accepted:** it costs ~$0.20 per run of 3 images (the app falls back to the free
+  model when credit runs out, so it never breaks), and photos now go to Replicate (which runs Google's model).
+  The app deletes the uploads from Replicate right after, and Replicate deletes request data within an
+  hour. The privacy text on every page was rewritten to say exactly this, instead of "processed in memory".
+- **How it works in code:** the server uploads the photos to Replicate, starts 3 predictions one after
+  another (low-credit accounts may start ~1 every 10 seconds), waits for all of them, deletes the uploads,
+  and asks the free model for any image that failed. Each image is labelled with the model that made it,
+  and the confidence note quotes that model's own test numbers.
+- Tested: 3 Nano Banana 2 images through the app's API in ~36 s. A bad token makes the Replicate step
+  fail cleanly (HTTP 401), which triggers the free backup.
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.

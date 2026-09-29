@@ -12,10 +12,12 @@ export type ResultData = {
   featureCount: number;
   originalUrl: string;
   mock?: boolean; // developer test mode (AI_MODE=mock): no AI was used
+  models?: string[]; // which AI model made each image
 };
 
 export default function Results({ data, onStartOver }: { data: ResultData; onStartOver: () => void }) {
   const urls = data.images.map(toDataUrl);
+  const usedNb2 = (data.models ?? []).some((m) => m.startsWith("Nano Banana"));
 
   return (
     <div className="space-y-8">
@@ -47,7 +49,10 @@ export default function Results({ data, onStartOver }: { data: ResultData; onSta
             <img src={url} alt={`Variation ${i + 1}, estimated appearance at age ${data.targetAge}`}
               className="aspect-square w-full rounded-lg border border-border object-cover" />
             <figcaption className="flex items-center justify-between text-sm">
-              <span className="text-muted">Variation {i + 1}</span>
+              <span className="text-muted">
+                Variation {i + 1}
+                {data.models?.[i] && <span className="block text-xs">{data.models[i]}</span>}
+              </span>
               <a href={url} download={`still-looking-age-${data.targetAge}-v${i + 1}.jpg`}
                 className="text-accent underline">Download</a>
             </figcaption>
@@ -58,7 +63,7 @@ export default function Results({ data, onStartOver }: { data: ResultData; onSta
       <section className="rounded-xl border border-border bg-surface p-5">
         <h2 className="text-lg font-semibold">How confident is this?</h2>
         <div className="mt-2 space-y-2 text-sm leading-relaxed">
-          {confidenceNote(data.gapYears, data.familyCount, data.featureCount).map((note) => <p key={note}>{note}</p>)}
+          {confidenceNote(data.gapYears, data.familyCount, data.featureCount, usedNb2).map((note) => <p key={note}>{note}</p>)}
         </div>
         <a href="/accuracy" className="mt-2 inline-block text-sm text-accent underline">See how we measured accuracy</a>
       </section>

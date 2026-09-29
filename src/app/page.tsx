@@ -34,9 +34,9 @@ export default function Home() {
       </section>
 
       <section className="rounded-xl border border-accent/30 bg-accent-soft p-5 text-sm leading-relaxed">
-        <strong>Your photos are never saved.</strong> There are no accounts, no database and no gallery. Photos
-        are processed in memory, the results are shown only to you, and everything is gone when you close the
-        page. We also publish how accurate the tool is, including where it fails:{" "}
+        <strong>We never save your photos.</strong> There are no accounts, no database and no gallery. Photos go
+        only to the AI service that makes the images (Replicate, or Cloudflare as a backup) and are deleted there
+        straight after. The results are shown only to you, and are gone when you close the page. We also publish how accurate the tool is, including where it fails:{" "}
         <Link href="/accuracy" className="text-accent underline">see the accuracy results</Link>.
       </section>
     </div>

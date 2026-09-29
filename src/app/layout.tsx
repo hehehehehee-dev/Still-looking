@@ -42,8 +42,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               &amp; Exploited Children (NCMEC) at 1-800-THE-LOST.
             </p>
             <p>
-              Still Looking keeps no records and does not search for anyone. Photos are processed in
-              memory to create an image for the person who uploaded them, then discarded.
+              Still Looking keeps no records and does not search for anyone. Photos are used only to create
+              images for the person who uploaded them, then deleted.
             </p>
           </div>
         </footer>

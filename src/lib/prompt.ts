@@ -16,7 +16,7 @@ export type FamilyRef = {
 };
 
 /** Who the person looks like at the target age, anchored to a familiar life stage. */
-function lifeStage(age: number, sex: Sex): string {
+export function lifeStage(age: number, sex: Sex): string {
   const pick = (boy: string, girl: string, any: string) => (sex === "boy" ? boy : sex === "girl" ? girl : any);
   if (age < 12) return `${age}-year-old ${pick("boy", "girl", "child")}, the age of a primary-school student`;
   if (age < 15) return `${age}-year-old ${pick("boy", "girl", "young teenager")} in early adolescence, the age of a middle-school student`;

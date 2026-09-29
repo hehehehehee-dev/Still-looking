@@ -1,16 +1,19 @@
 // POST /api/generate
-// Receives the photos as form data, asks the model for 3 variations, and returns them.
+// Receives the photos as form data, asks for 3 variations, and returns them.
+// Main model: Nano Banana 2 via Replicate (best identity in our eval). Any image it can't make
+// (no credit, rate limit, error) is made by the free FLUX model on Cloudflare instead.
 // Privacy: photos only ever exist in this request's memory. Nothing is written to disk,
 // a database, or logs, and the images go straight back to the person who uploaded them.
 
 import { planAges } from "@/lib/age";
 import { buildPrompt, type FamilyRef, type Sex } from "@/lib/prompt";
-import { DAILY_LIMIT_MESSAGE, DailyLimitError, generateImage } from "@/lib/cloudflare";
+import { DAILY_LIMIT_MESSAGE, DailyLimitError, FLUX_LABEL, generateImage } from "@/lib/cloudflare";
+import { generateNb2, NB2_LABEL, nb2Available } from "@/lib/replicate";
 import { MAX_INPUT_IMAGES } from "@/lib/limits";
 import { cleanFeatures } from "@/lib/features";
 import { aiMode } from "@/lib/aiMode";
 
-export const maxDuration = 60; // seconds; 3 parallel generations usually take 10-30s
+export const maxDuration = 180; // seconds; Nano Banana 2 on a low-credit account starts ~1 image per 10 s
 
 const VARIATIONS = 3;
 const MAX_FILE_BYTES = 1_000_000; // the browser shrinks photos to ~100 KB, so this is generous
@@ -69,14 +72,31 @@ export async function POST(request: Request) {
     const echo = Buffer.from(await child.arrayBuffer()).toString("base64");
     return Response.json({ images: [echo, echo, echo], ...ages, familyCount: family.length, featureCount: features.length, mock: true });
   }
+  const count = mode === "cheap" ? 1 : VARIATIONS;
+  const made: { image: string; model: string }[] = [];
+
+  // 4a. Main model (full mode only, when a Replicate token is configured)
+  if (mode === "full" && nb2Available()) {
+    try {
+      const nb2 = await generateNb2({ prompt, images, count, timeoutMs: 150_000 });
+      for (const r of nb2) {
+        if (typeof r === "string") made.push({ image: r, model: NB2_LABEL });
+        else console.error("Nano Banana 2 image failed, using FLUX instead:", r.message);
+      }
+    } catch (err) {
+      console.error("Nano Banana 2 unavailable, using FLUX instead:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  // 4b. Free backup model for any image still missing
   const results = await Promise.allSettled(
-    Array.from({ length: mode === "cheap" ? 1 : VARIATIONS }, () =>
+    Array.from({ length: count - made.length }, () =>
       generateImage({ prompt, images, seed: Math.floor(Math.random() * 1_000_000), size: mode === "cheap" ? 512 : 768 }),
     ),
   );
+  for (const r of results) if (r.status === "fulfilled") made.push({ image: r.value, model: FLUX_LABEL });
 
-  const generated = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
-  if (generated.length === 0) {
+  if (made.length === 0) {
     const first = results.find((r) => r.status === "rejected");
     if (first?.status === "rejected" && first.reason instanceof DailyLimitError) {
       return bad(DAILY_LIMIT_MESSAGE, 429);
@@ -86,7 +106,8 @@ export async function POST(request: Request) {
   }
 
   return Response.json({
-    images: generated,
+    images: made.map((m) => m.image),
+    models: made.map((m) => m.model), // which model made each image, shown to the family
     ...ages,
     familyCount: family.length,
     featureCount: features.length,

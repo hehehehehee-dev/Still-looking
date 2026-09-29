@@ -2,6 +2,7 @@
 // Cloudflare states it does not keep or train on inputs/outputs; we don't store them either.
 
 const MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
+export const FLUX_LABEL = "FLUX.2 klein (free backup model)";
 
 /** Cloudflare's free plan allows 10,000 "neurons" of AI use per day, reset at 00:00 UTC. */
 export class DailyLimitError extends Error {}

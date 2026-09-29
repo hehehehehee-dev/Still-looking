@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-26",
+  "date": "2026-09-28",
   "dataset": "FG-NET",
   "model": "FLUX.2 [klein] 4B on Cloudflare Workers AI",
   "face_model": "InsightFace buffalo_l (ArcFace similarity, age estimate)",
@@ -13,77 +13,133 @@
   "overall": {
     "pairs": 42,
     "baseline_mean": 0.42,
-    "aged_mean": 0.174,
-    "improvement_mean": -0.246,
+    "aged_mean": 0.178,
+    "improvement_mean": -0.242,
     "improvement_ci95": [
-      -0.285,
-      -0.208
+      -0.281,
+      -0.205
     ],
     "beat_baseline_pct": 0,
     "best_of_3_beat_baseline_pct": 2,
-    "aged_to_strangers_mean": 0.032,
-    "aged_closer_than_strangers_pct": 90,
-    "aged_top1_pct": 45,
+    "aged_to_strangers_mean": 0.031,
+    "aged_closer_than_strangers_pct": 95,
+    "aged_top1_pct": 48,
     "baseline_top1_pct": 86,
-    "aged_top5_pct": 62,
+    "aged_top5_pct": 64,
     "baseline_top5_pct": 93,
     "target_age_mean": 15.5,
-    "aged_est_age_mean": 28.0,
+    "aged_est_age_mean": 28.8,
     "real_est_age_mean": 32.5,
-    "aged_age_error_mean": 12.7
+    "aged_age_error_mean": 13.5
   },
   "multi_photo": {
-    "pairs": 31,
+    "pairs": 25,
     "single_photo_mean": 0.187,
-    "multi_photo_mean": 0.169,
-    "baseline_mean": 0.475,
-    "improvement_mean": -0.018,
+    "multi_photo_mean": 0.162,
+    "baseline_mean": 0.469,
+    "improvement_mean": -0.025,
     "improvement_ci95": [
-      -0.044,
-      0.007
+      -0.054,
+      0.001
     ],
-    "multi_better_pct": 42,
+    "multi_better_pct": 40,
     "multi_beat_baseline_pct": 0,
-    "single_top1_pct": 45,
-    "multi_top1_pct": 42
+    "single_top1_pct": 44,
+    "multi_top1_pct": 40
   },
   "distinguishing_features": {
-    "pairs": 18,
-    "single_photo_mean": 0.168,
-    "multi_photo_mean": 0.167,
-    "baseline_mean": 0.405,
-    "improvement_mean": -0.002,
+    "pairs": 13,
+    "single_photo_mean": 0.163,
+    "multi_photo_mean": 0.147,
+    "baseline_mean": 0.379,
+    "improvement_mean": -0.016,
     "improvement_ci95": [
-      -0.031,
-      0.022
+      -0.05,
+      0.014
     ],
-    "multi_better_pct": 67,
-    "multi_beat_baseline_pct": 6,
-    "single_top1_pct": 50,
-    "multi_top1_pct": 50,
-    "people_with_no_features_found": 7
+    "multi_better_pct": 54,
+    "multi_beat_baseline_pct": 8,
+    "single_top1_pct": 46,
+    "multi_top1_pct": 46,
+    "people_with_no_features_found": 12
+  },
+  "sam_editing_model": {
+    "pairs": 38,
+    "single_photo_mean": 0.176,
+    "multi_photo_mean": 0.204,
+    "baseline_mean": 0.412,
+    "improvement_mean": 0.028,
+    "improvement_ci95": [
+      -0.007,
+      0.062
+    ],
+    "multi_better_pct": 66,
+    "multi_beat_baseline_pct": 0,
+    "single_top1_pct": 47,
+    "multi_top1_pct": 47
+  },
+  "nano_banana_2": {
+    "pairs": 42,
+    "single_photo_mean": 0.173,
+    "multi_photo_mean": 0.208,
+    "baseline_mean": 0.42,
+    "improvement_mean": 0.035,
+    "improvement_ci95": [
+      0.003,
+      0.07
+    ],
+    "multi_better_pct": 52,
+    "multi_beat_baseline_pct": 7,
+    "single_top1_pct": 43,
+    "multi_top1_pct": 48
+  },
+  "nano_banana_2_by_bucket": {
+    "under5": {
+      "label": "Under 5 years",
+      "pairs": 14,
+      "aged_mean": 0.267,
+      "baseline_mean": 0.52,
+      "aged_top1_pct": 43,
+      "baseline_top1_pct": 93
+    },
+    "5to10": {
+      "label": "5 to 10 years",
+      "pairs": 14,
+      "aged_mean": 0.208,
+      "baseline_mean": 0.467,
+      "aged_top1_pct": 57,
+      "baseline_top1_pct": 100
+    },
+    "over10": {
+      "label": "Over 10 years",
+      "pairs": 14,
+      "aged_mean": 0.149,
+      "baseline_mean": 0.273,
+      "aged_top1_pct": 43,
+      "baseline_top1_pct": 64
+    }
   },
   "buckets": {
     "under5": {
       "label": "Under 5 years",
       "pairs": 14,
       "baseline_mean": 0.52,
-      "aged_mean": 0.224,
-      "improvement_mean": -0.296,
+      "aged_mean": 0.229,
+      "improvement_mean": -0.291,
       "improvement_ci95": [
-        -0.363,
-        -0.227
+        -0.36,
+        -0.22
       ],
       "beat_baseline_pct": 0,
       "best_of_3_beat_baseline_pct": 0,
-      "aged_to_strangers_mean": 0.042,
-      "aged_closer_than_strangers_pct": 86,
+      "aged_to_strangers_mean": 0.041,
+      "aged_closer_than_strangers_pct": 93,
       "aged_top1_pct": 57,
       "baseline_top1_pct": 93,
       "aged_top5_pct": 71,
       "baseline_top5_pct": 93,
       "target_age_mean": 9.6,
-      "aged_est_age_mean": 25.0,
+      "aged_est_age_mean": 24.9,
       "real_est_age_mean": 31.1,
       "aged_age_error_mean": 15.4
     },
@@ -91,24 +147,24 @@
       "label": "5 to 10 years",
       "pairs": 14,
       "baseline_mean": 0.467,
-      "aged_mean": 0.198,
-      "improvement_mean": -0.268,
+      "aged_mean": 0.204,
+      "improvement_mean": -0.262,
       "improvement_ci95": [
-        -0.332,
-        -0.204
+        -0.325,
+        -0.198
       ],
       "beat_baseline_pct": 0,
       "best_of_3_beat_baseline_pct": 0,
-      "aged_to_strangers_mean": 0.031,
-      "aged_closer_than_strangers_pct": 93,
-      "aged_top1_pct": 64,
+      "aged_to_strangers_mean": 0.03,
+      "aged_closer_than_strangers_pct": 100,
+      "aged_top1_pct": 71,
       "baseline_top1_pct": 100,
-      "aged_top5_pct": 79,
+      "aged_top5_pct": 86,
       "baseline_top5_pct": 100,
       "target_age_mean": 13.0,
-      "aged_est_age_mean": 24.3,
+      "aged_est_age_mean": 26.7,
       "real_est_age_mean": 30.9,
-      "aged_age_error_mean": 11.3
+      "aged_age_error_mean": 13.7
     },
     "over10": {
       "label": "Over 10 years",

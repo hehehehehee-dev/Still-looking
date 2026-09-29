@@ -33,6 +33,8 @@ OUT = ROOT / "eval" / "outputs"
 GENERATED = OUT / "images"
 GENERATED_MULTI = OUT / "images_multi"
 GENERATED_FEATURES = OUT / "images_features"
+GENERATED_SAM = OUT / "images_sam"
+GENERATED_NB2 = OUT / "images_nb2"
 VARIATIONS = 3
 BUCKETS = {"under5": "Under 5 years", "5to10": "5 to 10 years", "over10": "Over 10 years"}
 
@@ -118,6 +120,29 @@ def compare_arm(rows, key, only_ids=None):
         "single_top1_pct": round(100 * np.mean([top1(r["_v0"], i) for i, r in both])),
         "multi_top1_pct": round(100 * np.mean([top1(r[key], i) for i, r in both])),
     }
+
+
+def single_model_by_bucket(rows, key):
+    """Per age-gap group stats for a model we ran once per person (e.g. Nano Banana 2), so the app's
+    confidence note can quote the numbers of the model it actually uses."""
+    olds = np.stack([r["_old"] for r in rows])
+    out = {}
+    for b, label in BUCKETS.items():
+        idx = [i for i, r in enumerate(rows) if r["bucket"] == b and r[key] is not None]
+        if not idx:
+            continue
+        def top1(emb, i):
+            scores = olds @ emb
+            return int((scores > scores[i]).sum()) == 0
+        out[b] = {
+            "label": label,
+            "pairs": len(idx),
+            "aged_mean": round(float(np.mean([cos(rows[i][key], rows[i]["_old"]) for i in idx])), 3),
+            "baseline_mean": round(float(np.mean([rows[i]["baseline"] for i in idx])), 3),
+            "aged_top1_pct": round(100 * np.mean([top1(rows[i][key], i) for i in idx])),
+            "baseline_top1_pct": round(100 * np.mean([top1(rows[i]["_young"], i) for i in idx])),
+        }
+    return out
 
 
 def summarise(rows):
@@ -256,18 +281,27 @@ def main() -> None:
             "_v0": analyse(app, GENERATED / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED / f"{p['pair_id']}_v0.jpg").exists() else None,
             "_multi": analyse(app, GENERATED_MULTI / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_MULTI / f"{p['pair_id']}_v0.jpg").exists() else None,
             "_features": analyse(app, GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_FEATURES / f"{p['pair_id']}_v0.jpg").exists() else None,
+            "_sam": analyse(app, GENERATED_SAM / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_SAM / f"{p['pair_id']}_v0.jpg").exists() else None,
+            "_nb2": analyse(app, GENERATED_NB2 / f"{p['pair_id']}_v0.jpg")[0] if (GENERATED_NB2 / f"{p['pair_id']}_v0.jpg").exists() else None,
         })
 
     add_stranger_and_rank_scores(rows)
-    multi_photo = compare_arm(rows, "_multi")
+    # 7 sex labels were corrected by hand after these two experiments were generated; their extra
+    # images still used the old label, so leave those people out of these two comparisons
+    fixed = {p["pair_id"] for p in pairs if p.get("sex_checked") == "fixed"}
+    unchanged = {r["pair_id"] for r in rows} - fixed
+    multi_photo = compare_arm(rows, "_multi", unchanged)
     features_file = OUT / "features.json"
     suggested = json.loads(features_file.read_text()) if features_file.exists() else {}
-    with_features = {pid for pid, f in suggested.items() if f}  # only people who got at least one feature
+    with_features = {pid for pid, f in suggested.items() if f and pid not in fixed}  # people who got at least one feature
     features_arm = compare_arm(rows, "_features", with_features)
     if features_arm:
         features_arm["people_with_no_features_found"] = len(suggested) - len(with_features)
+    sam_arm = compare_arm(rows, "_sam")  # editing model (SAM) vs our redrawing model, variation 0
+    nb2_arm = compare_arm(rows, "_nb2")  # Nano Banana 2 with the app's prompt vs FLUX, variation 0
+    nb2_buckets = single_model_by_bucket(rows, "_nb2")
     for r in rows:
-        for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features"):
+        for k in ("_young", "_old", "_aged", "_v0", "_multi", "_features", "_sam", "_nb2"):
             del r[k]
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -291,6 +325,9 @@ def main() -> None:
         "overall": summarise(rows),
         "multi_photo": multi_photo,
         "distinguishing_features": features_arm,
+        "sam_editing_model": sam_arm,
+        "nano_banana_2": nb2_arm,
+        "nano_banana_2_by_bucket": nb2_buckets,
         "buckets": {k: {"label": BUCKETS[k], **summarise([r for r in rows if r["bucket"] == k])}
                     for k in BUCKETS if any(r["bucket"] == k for r in rows)},
     }
@@ -313,7 +350,8 @@ def main() -> None:
     (OUT / "results_table.md").write_text("\n".join(lines) + "\n")
 
     print("\n".join(lines))
-    for name, m in (("More photos of the child", multi_photo), ("AI-suggested features, unchecked", features_arm)):
+    for name, m in (("More photos of the child", multi_photo), ("AI-suggested features, unchecked", features_arm),
+                    ("SAM editing model instead of FLUX", sam_arm), ("Nano Banana 2 instead of FLUX", nb2_arm)):
         if m:
             print(f"\n{name} ({m['pairs']} people): similarity {m['single_photo_mean']} normal -> "
                   f"{m['multi_photo_mean']} with it (change {m['improvement_mean']:+}, 95% range {m['improvement_ci95']}); "
