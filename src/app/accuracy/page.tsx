@@ -45,9 +45,9 @@ const s = summary as unknown as {
 
 const beatCount = Math.round((s.overall.beat_baseline_pct / 100) * s.overall.pairs);
 
-/** "+0.02", "-0.02", or "0.00" (never "-0.00") */
-function signed(n: number): string {
-  const text = n.toFixed(2);
+/** "+0.02", "-0.02", or "0.00" (never "-0.00"); use 3 digits where rounding would hide a small value */
+function signed(n: number, digits = 2): string {
+  const text = n.toFixed(digits);
   return Number(text) === 0 ? "0.00" : Number(text) > 0 ? `+${text}` : text;
 }
 
@@ -71,7 +71,7 @@ function ExperimentResult({ title, exp, what }: { title: string; exp: Experiment
           Tested on {exp.pairs} people. Similarity to the real later photo went from{" "}
           <strong>{exp.single_photo_mean.toFixed(2)}</strong> to <strong>{exp.multi_photo_mean.toFixed(2)}</strong>{" "}
           ({signed(exp.improvement_mean)}; 95% range{" "}
-          {exp.improvement_ci95[0].toFixed(2)} to {exp.improvement_ci95[1].toFixed(2)}), better for{" "}
+          {signed(exp.improvement_ci95[0], 3)} to {signed(exp.improvement_ci95[1], 3)}), better for{" "}
           {exp.multi_better_pct}% of people. Right person picked first: {exp.single_top1_pct}% → {exp.multi_top1_pct}%.{" "}
           {exp.improvement_ci95[0] > 0
             ? "The whole range is above zero, so this helped."
@@ -113,7 +113,7 @@ export default function AccuracyPage() {
             app now uses <strong>Google&apos;s Nano Banana 2</strong> (via Replicate), the only one that measurably
             beat our first, free model: similarity to the real later photo{" "}
             {s.nano_banana_2.single_photo_mean.toFixed(2)} → <strong>{s.nano_banana_2.multi_photo_mean.toFixed(2)}</strong>{" "}
-            (95% range of the change {signed(s.nano_banana_2.improvement_ci95[0])} to {signed(s.nano_banana_2.improvement_ci95[1])}),
+            (95% range of the change {signed(s.nano_banana_2.improvement_ci95[0], 3)} to {signed(s.nano_banana_2.improvement_ci95[1], 3)}),
             and it keeps the requested age and sex more reliably. It is still well below the original photo
             ({(s.nano_banana_2.baseline_mean ?? s.overall.baseline_mean).toFixed(2)}). If it is unavailable, the app falls back to the free model.
             The detailed results below are for the free model (3 images per person); Nano Banana 2 is in

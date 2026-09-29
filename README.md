@@ -118,13 +118,13 @@ longer than the documented 00:00 UTC to come back.
 
 | | Original childhood photo (do nothing) | **Aged by Still Looking** | Other people (chance) |
 |---|---|---|---|
-| Similarity to the real later photo (ArcFace) | 0.42 | **0.17** | 0.03 |
-| Right person ranked first among 42 | 86% | **45%** | – |
+| Similarity to the real later photo (ArcFace) | 0.42 | **0.18** | 0.03 |
+| Right person ranked first among 42 | 86% | **48%** | – |
 | Aged image beat the original photo | – | **0 of 42** | – |
-| Aged image closer to the right person than to strangers | – | **90%** | – |
+| Aged image closer to the right person than to strangers | – | **95%** | – |
 
 By age gap (right person ranked first, original photo / aged image): under 5 years 93% / 57% ·
-5–10 years 100% / 64% · over 10 years 64% / **14%**. Full table: [`eval/outputs/results_table.md`](eval/outputs/results_table.md).
+5–10 years 100% / 71% · over 10 years 64% / **14%**. (After correcting 7 wrong sex labels; see LEARNING.md.) Full table: [`eval/outputs/results_table.md`](eval/outputs/results_table.md).
 
 **The app's main model now is Nano Banana 2** (see the experiments below): one image per person, right person
 ranked first 43% (under 5 years) · 57% (5–10) · **43% (over 10, vs 14% for the free model)**, while the original
