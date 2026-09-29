@@ -443,6 +443,13 @@ Still Looking. Newest entries at the bottom of each day.
 - Tested: 3 Nano Banana 2 images through the app's API in ~36 s. A bad token makes the Replicate step
   fail cleanly (HTTP 401), which triggers the free backup.
 
+### Deploying: Vercel thought the repo had two services
+- Vercel saw the Python files in `eval/` and treated the repo as a "multi-service" project (a Next.js app
+  plus a Python service), asking for a `vercel.json`.
+- The eval isn't a web service. It runs on my computer and needs the FG-NET photos and a 290 MB face
+  model, so it must not be deployed. Added a `vercel.json` that declares **only the Next.js app** as a
+  service and sends all traffic to it (the minimal single-service setup from Vercel's docs).
+
 ### Setup facts
 - Next.js 16 (App Router, TypeScript, Tailwind). Cloudflare is called with plain `fetch` (no SDK needed).
 - API key lives only in `.env.local`, which git ignores. `.env.example` shows the variable name.
