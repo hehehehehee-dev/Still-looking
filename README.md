@@ -134,12 +134,13 @@ photo scores 93% · 100% · 64%. It helps most for the long gaps this app is for
 
 | Experiment | People | Similarity: normal → with it | 95% range of the change | Verdict |
 |---|---|---|---|---|
-| Up to 2 extra childhood photos | 31 | 0.187 → 0.169 | −0.044 to +0.007 | No measurable help |
-| AI-suggested features (unchecked by a family) | 18* | 0.168 → 0.167 | −0.031 to +0.022 | No measurable help |
-| An *editing* model (SAM) instead of our *redrawing* model | 38† | 0.172 → 0.204 | −0.003 to +0.066 | Slightly better identity, not yet conclusive; ages faces too little |
+| Up to 2 extra childhood photos | 25‡ | 0.187 → 0.162 | −0.054 to +0.001 | No measurable help |
+| AI-suggested features (unchecked by a family) | 13*‡ | 0.163 → 0.147 | −0.050 to +0.014 | No measurable help |
+| An *editing* model (SAM) instead of our *redrawing* model | 38† | 0.176 → 0.204 | −0.007 to +0.062 | Slightly better identity, not conclusive; ages faces too little |
 | **Nano Banana 2 instead of FLUX** (now the app's main model) | 42 | 0.173 → **0.208** | **+0.003 to +0.070** | **Measurable improvement**; right age and sex more often |
 
-\*The free quota ran out partway; 7 more people had no clear features to add. On old, blurry scans the vision model
+‡People whose sex label was corrected after these experiments are left out of them.
+\*The free quota ran out partway; several more people had no clear features to add. On old, blurry scans the vision model
 mostly found only "dark eyes" or "thick eyebrows", so this is a weak test of the idea: real families can add marks
 (scars, birthmarks) a photo can't show.
 †SAM ([Alaluf et al., 2021](https://github.com/yuval-alaluf/SAM), run via Replicate) could not find a face in 4 of the 42 old photos.
