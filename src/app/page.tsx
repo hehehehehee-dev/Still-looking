@@ -5,14 +5,15 @@ export default function Home() {
     <div className="space-y-12">
       <section className="space-y-5 pt-6">
         <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">
-          For families whose child has been missing for years.
+          Help find a child who has been missing for years.
         </h1>
         <p className="max-w-2xl text-lg leading-relaxed text-muted">
           When a child has been missing for a long time, the only photo a family has may show a face that no
           longer exists. Forensic artists age those photos using pictures of the child&apos;s parents and
-          siblings, but families often wait a long time for one. Still Looking, inspired by that method, gives
-          families an early way to picture how their child may have grown: from the child&apos;s photo, guided by
-          their family if they wish, with measured and clearly stated limits.
+          siblings, but families often wait a long time for one. Still Looking, inspired by that method, creates
+          up-to-date pictures of how a child may look today, to bring to the police and missing-children
+          organisations and help the search. Made from the child&apos;s photo, guided by their family if they
+          wish, with measured and clearly stated limits.
         </p>
         <Link href="/create"
           className="inline-block rounded-lg bg-accent px-6 py-3 font-medium text-accent-contrast">
@@ -24,7 +25,7 @@ export default function Home() {
         {[
           ["1. Add photos", "A photo of the child, their date of birth, and optional photos of parents or siblings."],
           ["2. We estimate", "An AI image model ages the photo to the child's age today, in 3 different variations."],
-          ["3. Share with authorities", "Take the images to the police or NCMEC. They are estimates, never identification."],
+          ["3. Help the search", "Take the images, with the original photo, to the police or NCMEC. They support the search; they are never identification."],
         ].map(([title, text]) => (
           <div key={title} className="rounded-xl border border-border bg-surface p-5">
             <h2 className="text-lg font-semibold">{title}</h2>

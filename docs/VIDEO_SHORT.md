@@ -4,11 +4,13 @@
 
 This is Still Looking.
 
-It helps families of long-missing children picture how their child may look today.
+It creates up-to-date pictures of children who have been missing for years, to help their families find them.
 
-Privately, and honestly.
+When a child has been missing for a long time, the only photo a family has may show a face that no longer exists.
 
-When a child has been missing for years, the only photo a family has may show a face that no longer exists.
+People are searching for a child who has grown up.
+
+Still Looking shows how that child may look today.
 
 ## Take 2
 
@@ -30,19 +32,19 @@ Now I click Create.
 
 ## Take 3
 
-The app shows three possible faces, not one answer.
+The app shows three possible faces of the child today, not one answer.
 
-Each image says which AI model made it.
+The family can take them to the police, or to missing-children organisations, to help the search.
+
+The app always says: share the original photo too.
 
 The confidence note uses real test numbers.
 
-And it always says: share the original photo too.
-
-Photos are never saved.
+And photos are never saved.
 
 ## Take 4
 
-Most AI apps never test themselves. I did.
+To help a search, the pictures must be honest. So I tested them.
 
 I tested on forty-two real people, with photos at different ages.
 
@@ -56,7 +58,7 @@ Researchers call this the age-identity trade-off.
 
 ## Take 5
 
-So I tested seven ideas, one change at a time.
+So I tested seven ideas to make the pictures closer to the real person.
 
 Most did not help.
 
@@ -74,8 +76,8 @@ Everything, including what failed, is in my learning log.
 
 I built this with help from an AI coding assistant.
 
-Still Looking never says, "this is your child."
+Still Looking gives families a picture of who their child may be today, to keep the search going.
 
-It helps families picture their child, and tells them the truth.
+And it always tells them the truth.
 
 Thank you.
