@@ -12,7 +12,9 @@ When a child has been missing for years, the only photo a family has may show a 
 
 ## Take 2
 
-I upload a childhood photo and frame the face.
+For this demo, I use an AI-generated photo of a child who doesn't exist.
+
+I upload the photo and frame the face.
 
 I add the date of birth, and when the photo was taken.
 
