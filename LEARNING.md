@@ -443,6 +443,33 @@ Still Looking. Newest entries at the bottom of each day.
 - Tested: 3 Nano Banana 2 images through the app's API in ~36 s. A bad token makes the Replicate step
   fail cleanly (HTTP 401), which triggers the free backup.
 
+### My idea: grow the face "skeleton" first, then draw the face (tested for free first)
+- **Idea:** read the child's face structure (68 landmarks: jaw line, brows, eyes, nose, mouth), grow it
+  into an adult structure, stretch the photo to that shape, and only then ask the model to add adult details.
+- **Before paying for images, I checked whether shape is what goes wrong** (`eval/shape_check.py`, $0).
+  "Shape error" = how far the landmarks are from the real later photo after removing size, position
+  and rotation (% of face size, lower is better). The growth model was learned from 439 photos of
+  35 other FG-NET people (not the test or dev people).
+  | Shape used as the guess (42 test people) | Shape error vs real later photo |
+  |---|---|
+  | The child's own shape, unchanged | 13.2 |
+  | The child's shape + average growth ("grown skeleton") | 13.0 (no real change) |
+  | Just the **average** adult face shape for that age, ignoring the child | **9.5** |
+  | Our FLUX images / Nano Banana 2 images | 10.2 / 10.0 |
+  | *Two photos of the same adult, taken ≤ 3 years apart* | *13.2* |
+- **What it means:**
+  - Mixing in the child's own shape made the guess *worse* at every level I tried (on separate
+    training people and on the test people), so one ordinary photo doesn't tell us the person's
+    real skeleton. The last row shows why: two photos of the *same adult* differ as much as child vs
+    adult, because head angle, expression and camera change the landmarks more than bones do.
+  - The AI images already have about the right *average adult* shape (10.0 vs 9.5 best possible here).
+    So shape isn't where identity gets lost; it's lost in the details (skin, eyes, the "beautifying").
+- **Decision:** didn't build the stretch-the-photo step or spend money on it. The free check showed it
+  can't help much: the only shape information we can trust is the average one, and the model already
+  uses it. A real skeleton approach would need 3D face scans or several photos from known angles.
+- **Lesson:** test the assumption behind an idea cheaply before building it. Here, "is shape the
+  problem?" was answerable for $0 in 15 minutes.
+
 ### Deploying: Vercel thought the repo had two services
 - Vercel saw the Python files in `eval/` and treated the repo as a "multi-service" project (a Next.js app
   plus a Python service), asking for a `vercel.json`.

@@ -56,3 +56,5 @@ next-env.d.ts
 /eval/outputs/images_features/
 /eval/outputs/images_sam/
 /eval/outputs/images_nb2/
+# landmark coordinates of FG-NET faces (research-only data)
+/eval/outputs/landmarks.json

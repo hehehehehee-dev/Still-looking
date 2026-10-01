@@ -1,6 +1,6 @@
 # Still Looking
 
-**An honest way for families of long-term missing children to picture how their child may have grown up.**
+**Up-to-date pictures of long-missing children, to help their families find them. Honest about how accurate they are.**
 
 A parent uploads a photo of their child, the child's date of birth and roughly when the photo was taken.
 Optionally they add photos of biological parents or siblings and a list of distinguishing marks.

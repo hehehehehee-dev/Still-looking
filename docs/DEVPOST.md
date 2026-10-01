@@ -6,13 +6,15 @@ Copy each section into the matching Devpost field. Edit freely: it should sound 
 
 ## Tagline (one line)
 
-An honest, private way for families of long-term missing children to picture how their child may have grown up, and a tool that measured itself.
+Up-to-date pictures of long-missing children to help their families find them: three honest possibilities, tested on 42 real people, with no photos stored.
 
 ## Inspiration
 
 When a child has been missing for years, the only photo a family has may show a face that no longer exists. Forensic artists (for example at NCMEC) create age progressions, and they often use photos of the child's parents and siblings to see which features run in the family. Consumer "aging" apps use a single photo, keep uploads, and never say how accurate they are. I wanted to build something that works like the forensic approach, respects grieving families, and is honest about what it can and can't do.
 
 ## What it does
+Still Looking creates up-to-date pictures of children who have been missing for years, so their families, and the police or missing-children organisations helping them, can search for the person the child is today, not the child in an old photo.
+
 
 - A parent uploads a photo of the child, the date of birth and roughly when the photo was taken, and frames the child's face.
 - Optionally they add photos of biological parents or siblings, and distinguishing marks (moles, scars, birthmarks). An AI can *suggest* marks, but the family confirms them. The AI never guesses race or ethnicity.
